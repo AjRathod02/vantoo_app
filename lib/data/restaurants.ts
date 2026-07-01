@@ -1,0 +1,16 @@
+import type { Restaurant } from "@/lib/types";
+
+export const restaurants: Restaurant[] = [
+  { id: "r-1", name: "Pizza Palace", cuisine: ["Pizza", "Italian"], rating: 4.5, reviews: 1240, deliveryTime: "25-30 min", priceForTwo: 500, image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80", offer: "50% OFF up to ₹100", promoted: true },
+  { id: "r-2", name: "Burger Hub", cuisine: ["Burgers", "Fast Food"], rating: 4.3, reviews: 980, deliveryTime: "20-25 min", priceForTwo: 350, image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=600&q=80", offer: "Free delivery" },
+  { id: "r-3", name: "Biryani House", cuisine: ["Biryani", "Mughlai"], rating: 4.6, reviews: 2100, deliveryTime: "30-35 min", priceForTwo: 600, image: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=600&q=80", offer: "20% OFF", promoted: true },
+  { id: "r-4", name: "Sweet Tooth", cuisine: ["Desserts", "Bakery"], rating: 4.4, reviews: 760, deliveryTime: "15-20 min", priceForTwo: 300, image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80" },
+  { id: "r-5", name: "Green Bowl", cuisine: ["Healthy", "Salads"], rating: 4.2, reviews: 540, deliveryTime: "25-30 min", priceForTwo: 450, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80", offer: "Buy 1 Get 1" },
+  { id: "r-6", name: "Spice Route", cuisine: ["North Indian", "Curries"], rating: 4.5, reviews: 1850, deliveryTime: "30-40 min", priceForTwo: 550, image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80", promoted: true },
+  { id: "r-7", name: "Wok & Roll", cuisine: ["Chinese", "Asian"], rating: 4.1, reviews: 690, deliveryTime: "25-35 min", priceForTwo: 400, image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=600&q=80", offer: "30% OFF" },
+  { id: "r-8", name: "Taco Fiesta", cuisine: ["Mexican"], rating: 4.3, reviews: 430, deliveryTime: "20-30 min", priceForTwo: 480, image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&q=80" },
+  { id: "r-9", name: "Cafe Mocha", cuisine: ["Cafe", "Beverages"], rating: 4.6, reviews: 1320, deliveryTime: "15-25 min", priceForTwo: 350, image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80", offer: "Free coffee" },
+  { id: "r-10", name: "Sushi Zen", cuisine: ["Japanese", "Sushi"], rating: 4.7, reviews: 880, deliveryTime: "35-45 min", priceForTwo: 800, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&q=80", promoted: true },
+  { id: "r-11", name: "Dosa Corner", cuisine: ["South Indian"], rating: 4.4, reviews: 1560, deliveryTime: "20-30 min", priceForTwo: 250, image: "https://images.unsplash.com/photo-1630383249896-424e482df921?w=600&q=80", offer: "40% OFF" },
+  { id: "r-12", name: "Pasta Lab", cuisine: ["Italian", "Pasta"], rating: 4.2, reviews: 610, deliveryTime: "25-35 min", priceForTwo: 520, image: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&q=80" },
+];
