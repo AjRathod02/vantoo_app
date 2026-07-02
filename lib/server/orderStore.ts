@@ -34,6 +34,62 @@ export function deriveStatus(order: Order): OrderStatus {
 
 export function saveOrder(order: Order) {
   orders.set(order.id, order);
+  scheduleTrackingSimulation(order.id);
+}
+
+export function updateOrderTracking(
+  id: string,
+  tracking: Order["tracking"]
+) {
+  const order = orders.get(id);
+  if (!order) return;
+  orders.set(id, {
+    ...order,
+    tracking: { ...order.tracking, ...tracking },
+  });
+}
+
+const trackingTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+function scheduleTrackingSimulation(orderId: string) {
+  if (trackingTimers.has(orderId)) return;
+
+  const timer = setInterval(() => {
+    const order = orders.get(orderId);
+    if (!order || order.status === "cancelled" || order.status === "delivered") {
+      clearInterval(timer);
+      trackingTimers.delete(orderId);
+      return;
+    }
+
+    const status = deriveStatus(order);
+    const baseLat = 12.9716;
+    const baseLng = 77.5946;
+    const elapsed = (Date.now() - new Date(order.placedAt).getTime()) / 1000;
+    const progress = Math.min(elapsed / 80, 1);
+
+    const updated: Order = {
+      ...order,
+      status,
+      tracking: {
+        riderName: order.tracking?.riderName ?? "Rajesh Kumar",
+        riderPhone: order.tracking?.riderPhone ?? "+91 98765 43210",
+        riderLat: baseLat + progress * 0.02,
+        riderLng: baseLng + progress * 0.015,
+      },
+    };
+
+    if (status === "out_for_delivery" || status === "packed" || status === "confirmed") {
+      orders.set(orderId, updated);
+    }
+
+    if (status === "delivered") {
+      clearInterval(timer);
+      trackingTimers.delete(orderId);
+    }
+  }, 5000);
+
+  trackingTimers.set(orderId, timer);
 }
 
 export function getOrder(id: string): Order | undefined {

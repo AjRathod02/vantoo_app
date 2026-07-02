@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 import { Heart, MapPin, Search, ShoppingCart, User } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -12,6 +12,7 @@ import { useHydrated } from "@/lib/useHydrated";
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const hydrated = useHydrated();
   const itemCount = useCartStore((s) => s.totals().itemCount);
@@ -22,6 +23,8 @@ export function Navbar() {
     e.preventDefault();
     if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`);
   };
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">

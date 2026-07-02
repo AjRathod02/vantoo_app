@@ -82,6 +82,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  userId?: string;
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
@@ -90,9 +91,16 @@ export interface Order {
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  refundStatus?: RefundStatus;
+  refundAmount?: number;
   address: Address;
   placedAt: string;
+  cancelledAt?: string;
   service: ServiceType;
+  tracking?: OrderTracking;
 }
 
 export interface User {
@@ -101,6 +109,17 @@ export interface User {
   phone: string;
   email?: string;
   avatar?: string;
+  role?: "customer" | "admin";
+}
+
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type RefundStatus = "none" | "requested" | "processing" | "completed";
+
+export interface OrderTracking {
+  riderName?: string;
+  riderPhone?: string;
+  riderLat?: number;
+  riderLng?: number;
 }
 
 export interface WalletTransaction {

@@ -85,11 +85,21 @@ export default function ProfilePage() {
         ))}
       </div>
 
+      {user?.role === "admin" && (
+        <Link
+          href="/admin"
+          className="flex items-center justify-center rounded-2xl border border-brand-primary bg-brand-surface py-3 text-sm font-semibold text-brand-primary"
+        >
+          Open Admin Dashboard
+        </Link>
+      )}
+
       <button
-        onClick={() => {
-          logout();
+        onClick={async () => {
+          await logout();
           toast.success("Logged out");
           router.push("/");
+          router.refresh();
         }}
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-secondary/30 py-3 text-sm font-semibold text-brand-secondary hover:bg-brand-secondary/5"
       >

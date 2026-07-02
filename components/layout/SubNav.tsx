@@ -23,6 +23,7 @@ const links = [
 
 export function SubNav() {
   const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
   return (
     <div className="border-b border-gray-100 bg-white">
       <nav className="container-page no-scrollbar flex items-center gap-1 overflow-x-auto py-2">

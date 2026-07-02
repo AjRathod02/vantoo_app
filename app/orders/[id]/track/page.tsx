@@ -7,9 +7,10 @@ import type { Order } from "@/lib/types";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { STATUS_FLOW, statusMeta, isOngoing } from "@/lib/orderStatus";
-import { MockMap } from "@/components/MockMap";
+import { LiveOrderMap } from "@/components/LiveOrderMap";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { createClient } from "@/utils/supabase/client";
 
 export default function TrackOrderPage({
   params,
@@ -28,11 +29,24 @@ export default function TrackOrderPage({
         .then((d) => active && setOrder(d.order))
         .catch(() => active && setOrder(null))
         .finally(() => active && setLoading(false));
+
     load();
-    const timer = setInterval(load, 4000);
+    const timer = setInterval(load, 5000);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`order-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
+        () => load()
+      )
+      .subscribe();
+
     return () => {
       active = false;
       clearInterval(timer);
+      supabase.removeChannel(channel);
     };
   }, [id]);
 
@@ -57,6 +71,7 @@ export default function TrackOrderPage({
 
   const currentIndex =
     order.status === "cancelled" ? -1 : STATUS_FLOW.indexOf(order.status);
+  const rider = order.tracking;
 
   return (
     <div className="container-page py-6">
@@ -135,21 +150,37 @@ export default function TrackOrderPage({
             </ol>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4 shadow-card">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-surface font-bold text-brand-primary">
-              RK
-            </span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-ink">Rajesh Kumar</p>
-              <p className="text-xs text-ink-soft">Your delivery partner</p>
+          {rider?.riderName && (
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4 shadow-card">
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-surface font-bold text-brand-primary">
+                {rider.riderName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)}
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-ink">{rider.riderName}</p>
+                <p className="text-xs text-ink-soft">Your delivery partner</p>
+              </div>
+              {rider.riderPhone && (
+                <a
+                  href={`tel:${rider.riderPhone.replace(/\s/g, "")}`}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-brand-primary text-white"
+                >
+                  <Phone className="h-4 w-4" />
+                </a>
+              )}
             </div>
-            <button className="grid h-10 w-10 place-items-center rounded-full bg-brand-primary text-white">
-              <Phone className="h-4 w-4" />
-            </button>
-          </div>
+          )}
         </div>
 
-        <MockMap showRoute className="min-h-[400px] w-full lg:min-h-full" />
+        <LiveOrderMap
+          showRoute
+          className="min-h-[400px] w-full lg:min-h-full"
+          riderLat={rider?.riderLat}
+          riderLng={rider?.riderLng}
+        />
       </div>
     </div>
   );

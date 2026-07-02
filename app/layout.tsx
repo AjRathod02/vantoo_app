@@ -8,6 +8,7 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { Toaster } from "@/components/ui/Toaster";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { FirebaseAnalytics } from "@/components/FirebaseAnalytics";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -24,6 +25,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Vantoo",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
   icons: {
     apple: "/icons/icon.svg",
@@ -44,14 +48,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={montserrat.variable}>
       <body className="flex min-h-screen flex-col font-sans">
-        <Navbar />
-        <SubNav />
-        <main className="flex-1 pb-20 sm:pb-0">{children}</main>
-        <Footer />
-        <MobileNav />
-        <Toaster />
-        <InstallPrompt />
-        <FirebaseAnalytics />
+        <AuthProvider>
+          <Navbar />
+          <SubNav />
+          <main className="flex-1 pb-20 sm:pb-0">{children}</main>
+          <Footer />
+          <MobileNav />
+          <Toaster />
+          <InstallPrompt />
+          <FirebaseAnalytics />
+        </AuthProvider>
       </body>
     </html>
   );

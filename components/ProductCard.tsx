@@ -10,6 +10,7 @@ import { useCartStore } from "@/lib/stores/cart";
 import { useWishlistStore } from "@/lib/stores/wishlist";
 import { useHydrated } from "@/lib/useHydrated";
 import { toast } from "@/lib/stores/toast";
+import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -33,8 +34,18 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, 25vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn(
+              "object-cover transition-transform duration-300 group-hover:scale-105",
+              !product.inStock && "opacity-60"
+            )}
           />
+          {!product.inStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+              <span className="rounded-lg bg-ink/80 px-3 py-1 text-xs font-semibold text-white">
+                Out of Stock
+              </span>
+            </div>
+          )}
         </div>
         {discount > 0 && (
           <span className="absolute left-2 top-2 rounded-lg bg-brand-secondary px-2 py-0.5 text-xs font-bold text-white">
@@ -73,7 +84,8 @@ export function ProductCard({ product }: { product: Product }) {
           {product.brand}
           {product.unit ? ` · ${product.unit}` : ""}
         </p>
-        <Rating value={product.rating} reviews={product.reviews} className="mb-2" />
+        <Rating value={product.rating} reviews={product.reviews} className="mb-1" />
+        <AvailabilityBadge inStock={product.inStock} className="mb-2" />
         <div className="mt-auto flex items-center justify-between">
           <div>
             <span className="text-base font-bold text-ink">
@@ -87,11 +99,21 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           <button
             aria-label="Add to cart"
+            disabled={!product.inStock}
             onClick={() => {
+              if (!product.inStock) {
+                toast.error(`${product.name} is currently out of stock`);
+                return;
+              }
               addItem(product);
               toast.success(`${product.name} added to cart`);
             }}
-            className="grid h-8 w-8 place-items-center rounded-lg bg-brand-primary text-white transition-colors hover:bg-brand-primaryDark"
+            className={cn(
+              "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+              product.inStock
+                ? "bg-brand-primary text-white hover:bg-brand-primaryDark"
+                : "cursor-not-allowed bg-gray-200 text-ink-soft"
+            )}
           >
             <Plus className="h-4 w-4" />
           </button>

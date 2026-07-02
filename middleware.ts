@@ -1,23 +1,36 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { updateSession } from "@/utils/supabase/middleware";
 
 const PROTECTED = ["/checkout", "/orders", "/profile", "/wallet"];
+const ADMIN_PREFIX = "/admin";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  const { supabaseResponse, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
+
   const isProtected = PROTECTED.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
 
-  if (isProtected && !request.cookies.get("vantoo_session")) {
+  if (isProtected && !user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  if (pathname.startsWith(ADMIN_PREFIX)) {
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/checkout/:path*", "/orders/:path*", "/profile/:path*", "/wallet/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

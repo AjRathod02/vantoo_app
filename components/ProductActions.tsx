@@ -10,6 +10,7 @@ import { useCartStore } from "@/lib/stores/cart";
 import { useWishlistStore } from "@/lib/stores/wishlist";
 import { useHydrated } from "@/lib/useHydrated";
 import { toast } from "@/lib/stores/toast";
+import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 
 export function ProductActions({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
@@ -22,6 +23,8 @@ export function ProductActions({ product }: { product: Product }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <AvailabilityBadge inStock={product.inStock} size="md" />
+
       <div className="flex items-center gap-4">
         <span className="text-sm font-medium text-ink-muted">Quantity</span>
         <QuantityStepper value={qty} onChange={(n) => setQty(Math.max(1, n))} />
@@ -31,13 +34,18 @@ export function ProductActions({ product }: { product: Product }) {
         <Button
           size="lg"
           className="flex-1"
+          disabled={!product.inStock}
           onClick={() => {
+            if (!product.inStock) {
+              toast.error(`${product.name} is currently out of stock`);
+              return;
+            }
             addItem(product, qty);
             toast.success(`${product.name} added to cart`);
           }}
         >
           <ShoppingCart className="h-5 w-5" />
-          Add to Cart
+          {product.inStock ? "Add to Cart" : "Out of Stock"}
         </Button>
         <Button
           size="lg"

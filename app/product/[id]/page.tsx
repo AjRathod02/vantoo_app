@@ -6,6 +6,7 @@ import { products } from "@/lib/data/products";
 import { formatINR } from "@/lib/utils";
 import { Rating } from "@/components/ui/Rating";
 import { Badge } from "@/components/ui/Badge";
+import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 import { ProductActions } from "@/components/ProductActions";
 import { ProductCard } from "@/components/ProductCard";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -69,11 +70,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
             <h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">
               {product.name}
             </h1>
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-3">
               <Rating value={product.rating} reviews={product.reviews} />
               {product.unit && (
                 <span className="text-sm text-ink-muted">· {product.unit}</span>
               )}
+              <AvailabilityBadge inStock={product.inStock} size="md" />
             </div>
           </div>
 

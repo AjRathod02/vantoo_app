@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/server/auth";
 
-export function GET() {
-  const session = cookies().get("vantoo_session");
-  if (!session) {
-    return NextResponse.json({ user: null });
+export async function GET() {
+  const user = await getSessionUser();
+  if (!user) {
+    return Response.json({ user: null });
   }
-  return NextResponse.json({ authenticated: true, userId: session.value });
+  return Response.json({ user });
 }

@@ -1,22 +1,42 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
 
 const columns = [
   {
     title: "Company",
-    links: ["About Us", "Careers", "Blog", "Press"],
+    links: [
+      { label: "About Us", href: "#" },
+      { label: "Careers", href: "#" },
+      { label: "Blog", href: "#" },
+    ],
   },
   {
     title: "Services",
-    links: ["Food Delivery", "Grocery", "Medicine", "E-commerce"],
+    links: [
+      { label: "Food Delivery", href: "/food" },
+      { label: "Grocery", href: "/grocery" },
+      { label: "Medicine", href: "/medicine" },
+      { label: "E-commerce", href: "/ecommerce" },
+    ],
   },
   {
     title: "Support",
-    links: ["Help Center", "Contact Us", "Terms", "Privacy Policy"],
+    links: [
+      { label: "Terms", href: "/policies/terms" },
+      { label: "Privacy Policy", href: "/policies/privacy" },
+      { label: "Refund Policy", href: "/policies/refund" },
+      { label: "Cancellation Policy", href: "/policies/cancellation" },
+    ],
   },
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
+
   return (
     <footer className="mt-16 border-t border-gray-100 bg-brand-surface">
       <div className="container-page grid gap-8 py-12 md:grid-cols-5">
@@ -24,28 +44,20 @@ export function Footer() {
           <Logo />
           <p className="mt-3 max-w-xs text-sm text-ink-muted">
             Your everyday super-app for food, groceries, medicine and shopping —
-            delivered fast.
+            delivered fast with secure payments and live order tracking.
           </p>
-          <div className="mt-4 flex gap-3">
-            <span className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-ink-muted">
-              Get it on Google Play
-            </span>
-            <span className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-ink-muted">
-              Download on App Store
-            </span>
-          </div>
         </div>
         {columns.map((col) => (
           <div key={col.title}>
             <h4 className="mb-3 text-sm font-bold text-ink">{col.title}</h4>
             <ul className="space-y-2">
               {col.links.map((link) => (
-                <li key={link}>
+                <li key={link.label}>
                   <Link
-                    href="#"
+                    href={link.href}
                     className="text-sm text-ink-muted transition-colors hover:text-brand-primary"
                   >
-                    {link}
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -55,8 +67,8 @@ export function Footer() {
       </div>
       <div className="border-t border-gray-200 py-5">
         <p className="container-page text-center text-xs text-ink-soft">
-          © {new Date().getFullYear()} Vantoo. All rights reserved. Built as a UI
-          demo.
+          © {new Date().getFullYear()} Vantoo. All rights reserved. Payments
+          secured by Razorpay.
         </p>
       </div>
     </footer>

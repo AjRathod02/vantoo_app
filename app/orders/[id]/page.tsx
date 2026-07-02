@@ -78,12 +78,38 @@ export default function OrderDetailPage({
       </div>
 
       {isOngoing(order.status) && (
-        <Link href={`/orders/${order.id}/track`}>
-          <Button fullWidth size="lg">
-            <Navigation className="h-5 w-5" />
-            Track Order
+        <div className="flex gap-3">
+          <Link href={`/orders/${order.id}/track`} className="flex-1">
+            <Button fullWidth size="lg">
+              <Navigation className="h-5 w-5" />
+              Track Order
+            </Button>
+          </Link>
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={async () => {
+              const res = await fetch(`/api/orders/${order.id}/cancel`, {
+                method: "POST",
+              });
+              if (res.ok) {
+                const data = await res.json();
+                setOrder(data.order);
+              }
+            }}
+          >
+            Cancel
           </Button>
-        </Link>
+        </div>
+      )}
+
+      {order.refundStatus && order.refundStatus !== "none" && (
+        <div className="rounded-2xl border border-brand-primary/20 bg-brand-surface p-4 text-sm">
+          <p className="font-semibold text-ink">Refund status: {order.refundStatus}</p>
+          {order.refundAmount && (
+            <p className="text-ink-muted">Amount: {formatINR(order.refundAmount)}</p>
+          )}
+        </div>
       )}
 
       <div className="rounded-2xl border border-gray-100 p-4 shadow-card">

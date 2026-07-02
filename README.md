@@ -50,6 +50,18 @@ npm run lint    # run ESLint
 
 > The PWA service worker is disabled in development and only active in production builds.
 
+## Deploy on Vercel
+
+1. Push this repository to GitHub.
+2. Go to [vercel.com](https://vercel.com) → **Add New** → **Project** → import the repo.
+3. Keep the defaults (Framework: **Next.js**, Build: `npm run build`).
+4. Under **Environment Variables**, add every key from [`.env.example`](.env.example) using your Firebase project values.
+5. Click **Deploy**.
+
+Vercel will assign a URL like `https://your-project.vercel.app`. Pushes to the default branch redeploy automatically.
+
+> **Note:** `.env` is not committed. You must set the Firebase variables in the Vercel dashboard for Analytics to work in production.
+
 ## Demo Notes
 
 This project is a UI/front-end demo with a mock backend:
