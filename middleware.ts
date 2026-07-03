@@ -5,28 +5,32 @@ const PROTECTED = ["/checkout", "/orders", "/profile", "/wallet"];
 const ADMIN_PREFIX = "/admin";
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user } = await updateSession(request);
-  const { pathname } = request.nextUrl;
+  try {
+    const { supabaseResponse, user } = await updateSession(request);
+    const { pathname } = request.nextUrl;
 
-  const isProtected = PROTECTED.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
-  );
+    const isProtected = PROTECTED.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    );
 
-  if (isProtected && !user) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (pathname.startsWith(ADMIN_PREFIX)) {
-    if (!user) {
+    if (isProtected && !user) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
-  }
 
-  return supabaseResponse;
+    if (pathname.startsWith(ADMIN_PREFIX)) {
+      if (!user) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    return supabaseResponse;
+  } catch {
+    return NextResponse.next();
+  }
 }
 
 export const config = {
