@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
-import { getOrder, updateOrder } from "@/lib/server/orders";
+import { getOrder, cancelOrder } from "@/lib/server/orders";
 
 export async function POST(
   _request: Request,
@@ -11,7 +11,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const order = await getOrder(params.id);
+  const order = await getOrder(params.id, user.id);
   if (!order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
@@ -27,14 +27,11 @@ export async function POST(
     );
   }
 
-  const updated = await updateOrder(params.id, {
-    status: "cancelled",
-    cancelledAt: new Date().toISOString(),
-    refundStatus:
-      order.paymentStatus === "paid" ? "requested" : order.refundStatus,
-    refundAmount:
-      order.paymentStatus === "paid" ? order.total : order.refundAmount,
-  });
-
-  return NextResponse.json({ order: updated });
+  try {
+    const updated = await cancelOrder(params.id, user.id);
+    return NextResponse.json({ order: updated });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to cancel order";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

@@ -1,0 +1,15 @@
+import { ErrorCodes } from "@vantoo/shared";
+
+export class AppError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly statusCode: number = 400
+  ) {
+    super(message);
+  }
+
+  static forbidden(msg = "Forbidden") {
+    return new AppError(ErrorCodes.FORBIDDEN, msg, 403);
+  }
+}

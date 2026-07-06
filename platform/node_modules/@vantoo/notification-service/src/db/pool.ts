@@ -1,0 +1,30 @@
+import pg from "pg";
+import { Redis } from "ioredis";
+import { loadEnv } from "../config/env.js";
+
+const { Pool } = pg;
+let pool: pg.Pool | null = null;
+let redis: Redis | null = null;
+
+export function getPool(): pg.Pool {
+  if (!pool) {
+    const env = loadEnv();
+    pool = new Pool({
+      connectionString: env.DATABASE_URL,
+      ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+  return pool;
+}
+
+export function getRedis(): Redis {
+  if (!redis) {
+    redis = new Redis(loadEnv().REDIS_URL, { lazyConnect: true });
+  }
+  return redis;
+}
+
+export async function closeConnections(): Promise<void> {
+  if (pool) await pool.end();
+  if (redis) await redis.quit();
+}

@@ -6,7 +6,7 @@ import { Check, ChevronLeft, Clock, Phone } from "lucide-react";
 import type { Order } from "@/lib/types";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { STATUS_FLOW, statusMeta, isOngoing } from "@/lib/orderStatus";
+import { getTrackingSteps, getStepIndex, statusMeta, isOngoing } from "@/lib/orderStatus";
 import { LiveOrderMap } from "@/components/LiveOrderMap";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -69,8 +69,9 @@ export default function TrackOrderPage({
     );
   }
 
+  const trackingSteps = getTrackingSteps();
   const currentIndex =
-    order.status === "cancelled" ? -1 : STATUS_FLOW.indexOf(order.status);
+    order.status === "cancelled" ? -1 : getStepIndex(order.status);
   const rider = order.tracking;
 
   return (
@@ -102,7 +103,7 @@ export default function TrackOrderPage({
           <div className="rounded-2xl border border-gray-100 p-5 shadow-card">
             <h2 className="mb-4 text-sm font-bold text-ink">Order Status</h2>
             <ol className="relative space-y-6">
-              {STATUS_FLOW.map((status, i) => {
+              {trackingSteps.map((status, i) => {
                 const done = i <= currentIndex;
                 const active = i === currentIndex;
                 const meta = statusMeta[status];
@@ -124,7 +125,7 @@ export default function TrackOrderPage({
                           <span className="text-xs font-bold">{i + 1}</span>
                         )}
                       </span>
-                      {i < STATUS_FLOW.length - 1 && (
+                      {i < trackingSteps.length - 1 && (
                         <span
                           className={cn(
                             "mt-1 h-10 w-0.5",

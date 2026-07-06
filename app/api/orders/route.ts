@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { Order } from "@/lib/types";
 import { getSessionUser } from "@/lib/server/auth";
-import { listOrders, saveOrder } from "@/lib/server/orders";
+import { listOrders, createOrder } from "@/lib/server/orders";
 
 const addressSchema = z.object({
   id: z.string(),
@@ -19,6 +18,7 @@ const orderSchema = z.object({
     .array(
       z.object({
         productId: z.string(),
+        variantId: z.string().optional(),
         name: z.string(),
         image: z.string(),
         price: z.number(),
@@ -37,6 +37,7 @@ const orderSchema = z.object({
   razorpayPaymentId: z.string().optional(),
   address: addressSchema,
   service: z.enum(["food", "grocery", "medicine", "ecommerce"]),
+  idempotencyKey: z.string().optional(),
 });
 
 export async function GET() {
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { paymentMethod, paymentStatus, razorpayOrderId, razorpayPaymentId } =
+  const { paymentMethod, paymentStatus, razorpayOrderId, razorpayPaymentId, idempotencyKey } =
     parsed.data;
 
   if (paymentMethod !== "cod" && paymentStatus !== "paid") {
@@ -70,26 +71,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const id = `VT${Date.now().toString().slice(-8)}`;
-  const order: Order = {
-    id,
-    userId: user.id,
-    ...parsed.data,
-    status: "confirmed",
-    paymentStatus:
-      paymentMethod === "cod" ? "pending" : paymentStatus ?? "paid",
-    refundStatus: "none",
-    placedAt: new Date().toISOString(),
-    tracking: {
-      riderName: "Rajesh Kumar",
-      riderPhone: "+91 98765 43210",
-      riderLat: 12.9716,
-      riderLng: 77.5946,
-    },
-    razorpayOrderId,
-    razorpayPaymentId,
-  };
-
-  await saveOrder(order);
-  return NextResponse.json({ order }, { status: 201 });
+  try {
+    const order = await createOrder(user.id, {
+      items: parsed.data.items,
+      service: parsed.data.service,
+      address: parsed.data.address,
+      paymentMethod,
+      paymentStatus: paymentMethod === "cod" ? "pending" : paymentStatus ?? "paid",
+      razorpayOrderId,
+      razorpayPaymentId,
+      idempotencyKey,
+    });
+    return NextResponse.json({ order }, { status: 201 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to create order";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

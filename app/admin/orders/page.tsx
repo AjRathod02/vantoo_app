@@ -11,7 +11,7 @@ import { toast } from "@/lib/stores/toast";
 const statuses: OrderStatus[] = [
   "confirmed",
   "packed",
-  "out_for_delivery",
+  "in_transit",
   "delivered",
   "cancelled",
 ];
@@ -86,7 +86,7 @@ export default function AdminOrdersPage() {
                 ))}
               </div>
 
-              {order.status === "out_for_delivery" && (
+              {order.status === "in_transit" && (
                 <Button
                   size="sm"
                   className="mt-3"

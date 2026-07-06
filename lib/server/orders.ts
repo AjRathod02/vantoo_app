@@ -1,12 +1,20 @@
 import type { Order, OrderStatus } from "@/lib/types";
 import { hasAdminClient, createAdminClient } from "@/utils/supabase/admin";
+import { isPlatformEnabled } from "@/lib/platform/client";
 import {
-  deriveStatus,
+  createPlatformOrder,
+  listPlatformOrders,
+  getPlatformOrder,
+  cancelPlatformOrder,
+} from "@/lib/platform/orders";
+import { deriveLegacyStatus } from "@/lib/platform/legacy-orders";
+import {
   getOrder as getMemoryOrder,
   listOrders as listMemoryOrders,
   saveOrder as saveMemoryOrder,
   updateOrderTracking as updateMemoryTracking,
 } from "@/lib/server/orderStore";
+import { normalizeStatus } from "@/lib/orderStatus";
 
 type DbOrderRow = {
   id: string;
@@ -17,7 +25,7 @@ type DbOrderRow = {
   tax: number;
   discount: number;
   total: number;
-  status: OrderStatus;
+  status: string;
   payment_method: Order["paymentMethod"];
   payment_status: Order["paymentStatus"];
   razorpay_order_id: string | null;
@@ -44,7 +52,7 @@ function rowToOrder(row: DbOrderRow): Order {
     tax: Number(row.tax),
     discount: Number(row.discount),
     total: Number(row.total),
-    status: row.status,
+    status: normalizeStatus(row.status),
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status ?? "pending",
     razorpayOrderId: row.razorpay_order_id ?? undefined,
@@ -94,6 +102,11 @@ function orderToRow(order: Order) {
 }
 
 export async function saveOrder(order: Order) {
+  if (isPlatformEnabled() && order.userId) {
+    // Platform orders are created via createPlatformOrder — this path is legacy-only
+    return order;
+  }
+
   saveMemoryOrder(order);
 
   if (!hasAdminClient()) return order;
@@ -109,7 +122,54 @@ export async function saveOrder(order: Order) {
   return order;
 }
 
-export async function getOrder(id: string): Promise<Order | undefined> {
+export async function createOrder(
+  userId: string,
+  input: Parameters<typeof createPlatformOrder>[1]
+): Promise<Order> {
+  if (isPlatformEnabled()) {
+    return createPlatformOrder(userId, input);
+  }
+
+  const id = `VT${Date.now().toString().slice(-8)}`;
+  const order: Order = {
+    id,
+    userId,
+    items: input.items,
+    subtotal: input.items.reduce((s, i) => s + i.price * i.quantity, 0),
+    deliveryFee: 40,
+    tax: 0,
+    discount: 0,
+    total: input.items.reduce((s, i) => s + i.price * i.quantity, 0) + 40,
+    status: "confirmed",
+    paymentMethod: input.paymentMethod,
+    paymentStatus: input.paymentMethod === "cod" ? "pending" : (input.paymentStatus ?? "paid"),
+    refundStatus: "none",
+    address: input.address,
+    placedAt: new Date().toISOString(),
+    service: input.service,
+    razorpayOrderId: input.razorpayOrderId,
+    razorpayPaymentId: input.razorpayPaymentId,
+    tracking: {
+      riderName: "Rajesh Kumar",
+      riderPhone: "+91 98765 43210",
+      riderLat: 12.9716,
+      riderLng: 77.5946,
+    },
+  };
+  await saveOrder(order);
+  return order;
+}
+
+export async function getOrder(id: string, userId?: string): Promise<Order | undefined> {
+  if (isPlatformEnabled() && userId) {
+    try {
+      const order = await getPlatformOrder(userId, id);
+      if (order) return order;
+    } catch (e) {
+      console.error("Platform getOrder failed, falling back:", e);
+    }
+  }
+
   if (hasAdminClient()) {
     try {
       const supabase = createAdminClient();
@@ -121,30 +181,38 @@ export async function getOrder(id: string): Promise<Order | undefined> {
 
       if (!error && data) {
         const order = rowToOrder(data as DbOrderRow);
-        return { ...order, status: deriveStatus(order) };
+        return { ...order, status: deriveLegacyStatus(order) };
       }
     } catch (e) {
       console.error("Supabase getOrder failed:", e);
     }
   }
 
-  return getMemoryOrder(id);
+  const memory = getMemoryOrder(id);
+  if (memory) return { ...memory, status: deriveLegacyStatus(memory) };
+  return undefined;
 }
 
 export async function listOrders(userId?: string): Promise<Order[]> {
+  if (isPlatformEnabled() && userId) {
+    try {
+      return await listPlatformOrders(userId);
+    } catch (e) {
+      console.error("Platform listOrders failed, falling back:", e);
+    }
+  }
+
   if (hasAdminClient()) {
     try {
       const supabase = createAdminClient();
-      let query = supabase.from("orders").select("*").order("placed_at", {
-        ascending: false,
-      });
+      let query = supabase.from("orders").select("*").order("placed_at", { ascending: false });
       if (userId) query = query.eq("user_id", userId);
 
       const { data, error } = await query;
       if (!error && data) {
         return (data as DbOrderRow[]).map((row) => {
           const order = rowToOrder(row);
-          return { ...order, status: deriveStatus(order) };
+          return { ...order, status: deriveLegacyStatus(order) };
         });
       }
     } catch (e) {
@@ -153,13 +221,33 @@ export async function listOrders(userId?: string): Promise<Order[]> {
   }
 
   const orders = listMemoryOrders();
-  return userId ? orders.filter((o) => o.userId === userId) : orders;
+  const filtered = userId ? orders.filter((o) => o.userId === userId) : orders;
+  return filtered.map((o) => ({ ...o, status: deriveLegacyStatus(o) }));
 }
 
-export async function updateOrder(
-  id: string,
-  patch: Partial<Order>
-): Promise<Order | undefined> {
+export async function cancelOrder(id: string, userId: string, reason?: string): Promise<Order | undefined> {
+  if (isPlatformEnabled()) {
+    try {
+      return await cancelPlatformOrder(userId, id, reason);
+    } catch (e) {
+      console.error("Platform cancelOrder failed:", e);
+      throw e;
+    }
+  }
+
+  const existing = await getOrder(id, userId);
+  if (!existing) return undefined;
+
+  const updated: Order = {
+    ...existing,
+    status: "cancelled",
+    cancelledAt: new Date().toISOString(),
+  };
+  await saveOrder(updated);
+  return updated;
+}
+
+export async function updateOrder(id: string, patch: Partial<Order>): Promise<Order | undefined> {
   const existing = await getOrder(id);
   if (!existing) return undefined;
 
@@ -173,10 +261,7 @@ export async function updateOrder(
   return updated;
 }
 
-export async function updateOrderTracking(
-  id: string,
-  tracking: Order["tracking"]
-) {
+export async function updateOrderTracking(id: string, tracking: Order["tracking"]) {
   updateMemoryTracking(id, tracking);
   if (!hasAdminClient()) return;
 

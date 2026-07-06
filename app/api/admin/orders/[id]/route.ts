@@ -6,7 +6,10 @@ import { z } from "zod";
 
 const patchSchema = z.object({
   status: z
-    .enum(["confirmed", "packed", "out_for_delivery", "delivered", "cancelled"])
+    .enum([
+      "pending", "confirmed", "preparing", "packed", "assigned", "picked",
+      "in_transit", "delivered", "cancelled", "returned", "refunded", "exchanged",
+    ])
     .optional(),
   refundStatus: z
     .enum(["none", "requested", "processing", "completed"])

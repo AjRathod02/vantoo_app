@@ -1,0 +1,128 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vantoo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vantoo
+      POSTGRES_PASSWORD: vantoo_dev_password
+      POSTGRES_DB: vantoo_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vantoo -d vantoo_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: vantoo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: services/auth/Dockerfile
+    container_name: vantoo-auth
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4001
+      DATABASE_URL: postgresql://vantoo:vantoo_dev_password@postgres:5432/vantoo_platform
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev_jwt_secret_change_in_production_min_32_chars
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      NOTIFICATION_SERVICE_URL: http://notification-service:4009
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4001:4001"
+
+  catalog-service:
+    build:
+      context: ..
+      dockerfile: services/catalog/Dockerfile
+    container_name: vantoo-catalog
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4002
+      DATABASE_URL: postgresql://vantoo:vantoo_dev_password@postgres:5432/vantoo_platform
+      REDIS_URL: redis://redis:6379
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4002:4002"
+
+  order-service:
+    build:
+      context: ..
+      dockerfile: services/order/Dockerfile
+    container_name: vantoo-order
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      catalog-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 4003
+      DATABASE_URL: postgresql://vantoo:vantoo_dev_password@postgres:5432/vantoo_platform
+      REDIS_URL: redis://redis:6379
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      CATALOG_SERVICE_URL: http://catalog-service:4002
+      NOTIFICATION_SERVICE_URL: http://notification-service:4009
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4003:4003"
+
+  notification-service:
+    build:
+      context: ..
+      dockerfile: services/notification/Dockerfile
+    container_name: vantoo-notification
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4009
+      DATABASE_URL: postgresql://vantoo:vantoo_dev_password@postgres:5432/vantoo_platform
+      REDIS_URL: redis://redis:6379
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4009:4009"
+
+volumes:
+  postgres_data:
+  redis_data:

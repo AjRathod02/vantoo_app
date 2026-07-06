@@ -1,0 +1,486 @@
+openapi: 3.1.0
+info:
+  title: Vantoo Auth Service API
+  version: 1.0.0
+  description: Enterprise authentication, authorization, session and device management.
+
+servers:
+  - url: http://localhost:4001
+    description: Local development
+
+tags:
+  - name: Authentication
+  - name: OTP
+  - name: OAuth
+  - name: Sessions
+  - name: Devices
+  - name: Password
+  - name: Health
+
+paths:
+  /v1/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/otp/send:
+    post:
+      tags: [OTP]
+      summary: Send OTP to phone or email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpSendRequest"
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      expiresIn:
+                        type: integer
+                      otpId:
+                        type: string
+                        format: uuid
+
+  /v1/auth/otp/verify:
+    post:
+      tags: [OTP]
+      summary: Verify OTP and authenticate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpVerifyRequest"
+      responses:
+        "200":
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/oauth/google:
+    post:
+      tags: [OAuth]
+      summary: Login with Google ID token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                device:
+                  $ref: "#/components/schemas/DeviceInfo"
+      responses:
+        "200":
+          description: OAuth login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/oauth/apple:
+    post:
+      tags: [OAuth]
+      summary: Login with Apple identity token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identityToken]
+              properties:
+                identityToken:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                device:
+                  $ref: "#/components/schemas/DeviceInfo"
+      responses:
+        "200":
+          description: OAuth login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout current session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logged out
+
+  /v1/auth/logout-all:
+    post:
+      tags: [Authentication]
+      summary: Logout all sessions except current
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All sessions revoked
+
+  /v1/auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/User"
+
+  /v1/auth/sessions:
+    get:
+      tags: [Sessions]
+      summary: List active sessions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Session list
+
+  /v1/auth/sessions/{sessionId}:
+    delete:
+      tags: [Sessions]
+      summary: Revoke a session
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session revoked
+
+  /v1/auth/devices:
+    get:
+      tags: [Devices]
+      summary: List registered devices
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Device list
+
+  /v1/auth/devices/{deviceId}:
+    delete:
+      tags: [Devices]
+      summary: Remove a device
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Device removed
+
+  /v1/auth/password/reset-request:
+    post:
+      tags: [Password]
+      summary: Request password reset OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: OTP sent
+
+  /v1/auth/password/reset:
+    post:
+      tags: [Password]
+      summary: Reset password with OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp, newPassword]
+              properties:
+                email:
+                  type: string
+                  format: email
+                otp:
+                  type: string
+                  pattern: "^\\d{6}$"
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password reset
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: Service healthy
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    DeviceInfo:
+      type: object
+      required: [fingerprint]
+      properties:
+        fingerprint:
+          type: string
+        deviceName:
+          type: string
+        platform:
+          type: string
+          enum: [web, ios, android, unknown]
+        pushToken:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [email, password, firstName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        device:
+          $ref: "#/components/schemas/DeviceInfo"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        device:
+          $ref: "#/components/schemas/DeviceInfo"
+
+    OtpSendRequest:
+      type: object
+      required: [identifier, channel, purpose]
+      properties:
+        identifier:
+          type: string
+        channel:
+          type: string
+          enum: [sms, email, whatsapp]
+        purpose:
+          type: string
+          enum: [login, register, password_reset, phone_verify, email_verify]
+
+    OtpVerifyRequest:
+      type: object
+      required: [identifier, otp, purpose]
+      properties:
+        identifier:
+          type: string
+        otp:
+          type: string
+          pattern: "^\\d{6}$"
+        purpose:
+          type: string
+          enum: [login, register, password_reset, phone_verify, email_verify]
+        firstName:
+          type: string
+        lastName:
+          type: string
+        device:
+          $ref: "#/components/schemas/DeviceInfo"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
+        emailVerified:
+          type: boolean
+        phoneVerified:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+        tokenType:
+          type: string
+          enum: [Bearer]
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/User"
+            tokens:
+              $ref: "#/components/schemas/AuthTokens"
+            sessionId:
+              type: string
+              format: uuid
+            deviceId:
+              type: string
+              format: uuid
+              nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object

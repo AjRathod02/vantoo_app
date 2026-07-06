@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== "production") {
 const STAGE_SCHEDULE: { status: OrderStatus; afterSeconds: number }[] = [
   { status: "confirmed", afterSeconds: 0 },
   { status: "packed", afterSeconds: 20 },
-  { status: "out_for_delivery", afterSeconds: 45 },
+  { status: "in_transit", afterSeconds: 45 },
   { status: "delivered", afterSeconds: 80 },
 ];
 
@@ -79,7 +79,7 @@ function scheduleTrackingSimulation(orderId: string) {
       },
     };
 
-    if (status === "out_for_delivery" || status === "packed" || status === "confirmed") {
+    if (status === "in_transit" || status === "packed" || status === "confirmed") {
       orders.set(orderId, updated);
     }
 

@@ -1,7 +1,8 @@
-import type { Order, OrderStatus } from "@/lib/types";
+import type { Product } from "@/lib/types";
 import { hasAdminClient, createAdminClient } from "@/utils/supabase/admin";
 import { products as seedProducts } from "@/lib/data/products";
-import type { Product } from "@/lib/types";
+import { isPlatformEnabled } from "@/lib/platform/client";
+import { listCatalogProducts, getCatalogProduct } from "@/lib/platform/catalog";
 
 type DbProductRow = {
   id: string;
@@ -63,7 +64,20 @@ export async function listProducts(filters?: {
   service?: string;
   category?: string;
   q?: string;
+  brands?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  sort?: string;
 }): Promise<Product[]> {
+  if (isPlatformEnabled()) {
+    try {
+      return await listCatalogProducts(filters);
+    } catch (e) {
+      console.error("Catalog service listProducts failed, falling back:", e);
+    }
+  }
+
   if (hasAdminClient()) {
     try {
       const supabase = createAdminClient();
@@ -86,8 +100,7 @@ export async function listProducts(filters?: {
 
   let list = [...seedProducts];
   if (filters?.service) list = list.filter((p) => p.service === filters.service);
-  if (filters?.category)
-    list = list.filter((p) => p.category === filters.category);
+  if (filters?.category) list = list.filter((p) => p.category === filters.category);
   if (filters?.q) {
     const q = filters.q.toLowerCase();
     list = list.filter(
@@ -101,6 +114,15 @@ export async function listProducts(filters?: {
 }
 
 export async function getProduct(id: string): Promise<Product | undefined> {
+  if (isPlatformEnabled()) {
+    try {
+      const product = await getCatalogProduct(id);
+      if (product) return product;
+    } catch (e) {
+      console.error("Catalog service getProduct failed, falling back:", e);
+    }
+  }
+
   if (hasAdminClient()) {
     try {
       const supabase = createAdminClient();

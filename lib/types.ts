@@ -1,7 +1,9 @@
-export type ServiceType = "food" | "grocery" | "medicine" | "ecommerce";
+export type ServiceType = "food" | "grocery" | "medicine" | "ecommerce" | "local_shop";
 
 export interface Product {
   id: string;
+  platformId?: string;
+  variantId?: string;
   name: string;
   description: string;
   service: ServiceType;
@@ -63,17 +65,25 @@ export interface Address {
   isDefault?: boolean;
 }
 
-export type PaymentMethod = "card" | "netbanking" | "upi" | "cod";
+export type PaymentMethod = "card" | "netbanking" | "upi" | "cod" | "wallet";
 
 export type OrderStatus =
+  | "pending"
   | "confirmed"
+  | "preparing"
   | "packed"
-  | "out_for_delivery"
+  | "assigned"
+  | "picked"
+  | "in_transit"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "returned"
+  | "refunded"
+  | "exchanged";
 
 export interface OrderItem {
   productId: string;
+  variantId?: string;
   name: string;
   image: string;
   price: number;
@@ -82,6 +92,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  platformId?: string;
   userId?: string;
   items: OrderItem[];
   subtotal: number;
@@ -101,6 +112,7 @@ export interface Order {
   cancelledAt?: string;
   service: ServiceType;
   tracking?: OrderTracking;
+  statusHistory?: Array<{ status: OrderStatus; at: string }>;
 }
 
 export interface User {
@@ -112,7 +124,7 @@ export interface User {
   role?: "customer" | "admin";
 }
 
-export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "processing" | "partially_refunded";
 export type RefundStatus = "none" | "requested" | "processing" | "completed";
 
 export interface OrderTracking {
@@ -128,4 +140,12 @@ export interface WalletTransaction {
   amount: number;
   type: "credit" | "debit";
   date: string;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: string;
 }
