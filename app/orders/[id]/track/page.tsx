@@ -26,7 +26,22 @@ export default function TrackOrderPage({
     const load = () =>
       api
         .order(id)
-        .then((d) => active && setOrder(d.order))
+        .then(async (d) => {
+          if (!active) return;
+          let orderData = d.order;
+          try {
+            const trackRes = await fetch(`/api/orders/${id}/tracking`);
+            if (trackRes.ok) {
+              const trackData = await trackRes.json();
+              if (trackData.tracking) {
+                orderData = { ...orderData, tracking: { ...orderData.tracking, ...trackData.tracking } };
+              }
+            }
+          } catch {
+            // use order tracking as-is
+          }
+          setOrder(orderData);
+        })
         .catch(() => active && setOrder(null))
         .finally(() => active && setLoading(false));
 

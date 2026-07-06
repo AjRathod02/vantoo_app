@@ -13,6 +13,7 @@ const serviceHref: Record<ServiceType | "all", string> = {
   grocery: "/grocery",
   medicine: "/medicine",
   ecommerce: "/ecommerce",
+  local_shop: "/local-shop",
 };
 
 export function OfferStrip({ offers }: { offers: Offer[] }) {

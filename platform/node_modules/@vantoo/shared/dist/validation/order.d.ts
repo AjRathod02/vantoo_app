@@ -29,30 +29,30 @@ export declare const createOrderSchema: z.ZodObject<{
         longitude: z.ZodOptional<z.ZodNumber>;
         isDefault: z.ZodOptional<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
-        label: string;
-        line1: string;
         city: string;
         pincode: string;
+        label: string;
+        line1: string;
+        state?: string | undefined;
+        latitude?: number | undefined;
+        longitude?: number | undefined;
         phone?: string | undefined;
         recipientName?: string | undefined;
         line2?: string | undefined;
         landmark?: string | undefined;
-        state?: string | undefined;
-        latitude?: number | undefined;
-        longitude?: number | undefined;
         isDefault?: boolean | undefined;
     }, {
-        label: string;
-        line1: string;
         city: string;
         pincode: string;
+        label: string;
+        line1: string;
+        state?: string | undefined;
+        latitude?: number | undefined;
+        longitude?: number | undefined;
         phone?: string | undefined;
         recipientName?: string | undefined;
         line2?: string | undefined;
         landmark?: string | undefined;
-        state?: string | undefined;
-        latitude?: number | undefined;
-        longitude?: number | undefined;
         isDefault?: boolean | undefined;
     }>;
     deliveryInstructions: z.ZodOptional<z.ZodString>;
@@ -64,24 +64,24 @@ export declare const createOrderSchema: z.ZodObject<{
     razorpayOrderId: z.ZodOptional<z.ZodString>;
     razorpayPaymentId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    serviceType: "grocery" | "ecommerce" | "local_shop" | "food" | "medicine";
     items: {
         productId: string;
         quantity: number;
         variantId?: string | undefined;
     }[];
-    serviceType: "food" | "grocery" | "medicine" | "ecommerce" | "local_shop";
     address: {
-        label: string;
-        line1: string;
         city: string;
         pincode: string;
+        label: string;
+        line1: string;
+        state?: string | undefined;
+        latitude?: number | undefined;
+        longitude?: number | undefined;
         phone?: string | undefined;
         recipientName?: string | undefined;
         line2?: string | undefined;
         landmark?: string | undefined;
-        state?: string | undefined;
-        latitude?: number | undefined;
-        longitude?: number | undefined;
         isDefault?: boolean | undefined;
     };
     paymentMethod: "upi" | "card" | "netbanking" | "wallet" | "cod" | "gift_card" | "split";
@@ -94,24 +94,24 @@ export declare const createOrderSchema: z.ZodObject<{
     razorpayOrderId?: string | undefined;
     razorpayPaymentId?: string | undefined;
 }, {
+    serviceType: "grocery" | "ecommerce" | "local_shop" | "food" | "medicine";
     items: {
         productId: string;
         quantity: number;
         variantId?: string | undefined;
     }[];
-    serviceType: "food" | "grocery" | "medicine" | "ecommerce" | "local_shop";
     address: {
-        label: string;
-        line1: string;
         city: string;
         pincode: string;
+        label: string;
+        line1: string;
+        state?: string | undefined;
+        latitude?: number | undefined;
+        longitude?: number | undefined;
         phone?: string | undefined;
         recipientName?: string | undefined;
         line2?: string | undefined;
         landmark?: string | undefined;
-        state?: string | undefined;
-        latitude?: number | undefined;
-        longitude?: number | undefined;
         isDefault?: boolean | undefined;
     };
     paymentMethod: "upi" | "card" | "netbanking" | "wallet" | "cod" | "gift_card" | "split";

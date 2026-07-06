@@ -11,7 +11,7 @@ export declare const sendNotificationSchema: z.ZodObject<{
     referenceId: z.ZodOptional<z.ZodString>;
     recipient: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    channel: "sms" | "email" | "whatsapp" | "push" | "in_app";
+    channel: "push" | "email" | "sms" | "whatsapp" | "in_app";
     userId?: string | undefined;
     templateName?: string | undefined;
     title?: string | undefined;
@@ -22,7 +22,7 @@ export declare const sendNotificationSchema: z.ZodObject<{
     referenceId?: string | undefined;
     recipient?: string | undefined;
 }, {
-    channel: "sms" | "email" | "whatsapp" | "push" | "in_app";
+    channel: "push" | "email" | "sms" | "whatsapp" | "in_app";
     userId?: string | undefined;
     templateName?: string | undefined;
     title?: string | undefined;

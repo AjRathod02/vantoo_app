@@ -14,7 +14,7 @@ export declare const productListQuerySchema: z.ZodObject<{
     page: number;
     limit: number;
     sort?: "price-asc" | "price-desc" | "rating" | "newest" | undefined;
-    service?: "food" | "grocery" | "medicine" | "ecommerce" | "local_shop" | undefined;
+    service?: "grocery" | "ecommerce" | "local_shop" | "food" | "medicine" | undefined;
     category?: string | undefined;
     q?: string | undefined;
     brands?: string | undefined;
@@ -23,7 +23,7 @@ export declare const productListQuerySchema: z.ZodObject<{
     minRating?: number | undefined;
 }, {
     sort?: "price-asc" | "price-desc" | "rating" | "newest" | undefined;
-    service?: "food" | "grocery" | "medicine" | "ecommerce" | "local_shop" | undefined;
+    service?: "grocery" | "ecommerce" | "local_shop" | "food" | "medicine" | undefined;
     category?: string | undefined;
     q?: string | undefined;
     brands?: string | undefined;
@@ -47,30 +47,30 @@ export declare const addressSchema: z.ZodObject<{
     longitude: z.ZodOptional<z.ZodNumber>;
     isDefault: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-    label: string;
-    line1: string;
     city: string;
     pincode: string;
+    label: string;
+    line1: string;
+    state?: string | undefined;
+    latitude?: number | undefined;
+    longitude?: number | undefined;
     phone?: string | undefined;
     recipientName?: string | undefined;
     line2?: string | undefined;
     landmark?: string | undefined;
-    state?: string | undefined;
-    latitude?: number | undefined;
-    longitude?: number | undefined;
     isDefault?: boolean | undefined;
 }, {
-    label: string;
-    line1: string;
     city: string;
     pincode: string;
+    label: string;
+    line1: string;
+    state?: string | undefined;
+    latitude?: number | undefined;
+    longitude?: number | undefined;
     phone?: string | undefined;
     recipientName?: string | undefined;
     line2?: string | undefined;
     landmark?: string | undefined;
-    state?: string | undefined;
-    latitude?: number | undefined;
-    longitude?: number | undefined;
     isDefault?: boolean | undefined;
 }>;
 export type AddressInput = z.infer<typeof addressSchema>;

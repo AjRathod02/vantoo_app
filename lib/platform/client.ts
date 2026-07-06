@@ -3,6 +3,9 @@ const DEFAULTS = {
   order: "http://localhost:4003",
   notification: "http://localhost:4009",
   auth: "http://localhost:4001",
+  vendor: "http://localhost:4004",
+  rider: "http://localhost:4005",
+  tracking: "http://localhost:4010",
 };
 
 export function isPlatformEnabled(): boolean {
@@ -15,6 +18,9 @@ export function getServiceUrl(service: keyof typeof DEFAULTS): string {
     order: process.env.ORDER_SERVICE_URL,
     notification: process.env.NOTIFICATION_SERVICE_URL,
     auth: process.env.AUTH_SERVICE_URL,
+    vendor: process.env.VENDOR_SERVICE_URL,
+    rider: process.env.RIDER_SERVICE_URL,
+    tracking: process.env.TRACKING_SERVICE_URL,
   };
   return envMap[service] ?? DEFAULTS[service];
 }

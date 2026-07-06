@@ -64,6 +64,9 @@ jobs:
           npm run lint -w @vantoo/catalog-service
           npm run lint -w @vantoo/order-service
           npm run lint -w @vantoo/notification-service
+          npm run lint -w @vantoo/vendor-service
+          npm run lint -w @vantoo/rider-service
+          npm run lint -w @vantoo/tracking-service
 
       - name: Run unit tests
         run: npm run test -w @vantoo/auth-service

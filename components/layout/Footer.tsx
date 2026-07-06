@@ -11,6 +11,8 @@ const columns = [
       { label: "About Us", href: "#" },
       { label: "Careers", href: "#" },
       { label: "Blog", href: "#" },
+      { label: "Sell on Vantoo", href: "/vendor/onboarding" },
+      { label: "Deliver with Vantoo", href: "/rider/onboarding" },
     ],
   },
   {

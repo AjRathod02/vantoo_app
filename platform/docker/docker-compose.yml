@@ -123,6 +123,67 @@ services:
     ports:
       - "4009:4009"
 
+  vendor-service:
+    build:
+      context: ..
+      dockerfile: services/vendor/Dockerfile
+    container_name: vantoo-vendor
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 4004
+      DATABASE_URL: postgresql://vantoo:vantoo_dev_password@postgres:5432/vantoo_platform
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      NOTIFICATION_SERVICE_URL: http://notification-service:4009
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4004:4004"
+
+  rider-service:
+    build:
+      context: ..
+      dockerfile: services/rider/Dockerfile
+    container_name: vantoo-rider
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 4005
+      DATABASE_URL: postgresql://vantoo:vantoo_dev_password@postgres:5432/vantoo_platform
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      NOTIFICATION_SERVICE_URL: http://notification-service:4009
+      TRACKING_SERVICE_URL: http://tracking-service:4010
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4005:4005"
+
+  tracking-service:
+    build:
+      context: ..
+      dockerfile: services/tracking/Dockerfile
+    container_name: vantoo-tracking
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4010
+      REDIS_URL: redis://redis:6379
+      INTERNAL_SERVICE_KEY: dev_internal_key_change_in_production
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "4010:4010"
+
 volumes:
   postgres_data:
   redis_data:

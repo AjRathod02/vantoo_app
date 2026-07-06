@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
-const PROTECTED = ["/checkout", "/orders", "/profile", "/wallet"];
+const PROTECTED = ["/checkout", "/orders", "/profile", "/wallet", "/vendor", "/rider"];
 const ADMIN_PREFIX = "/admin";
 
 export async function middleware(request: NextRequest) {

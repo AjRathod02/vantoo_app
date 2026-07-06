@@ -7,6 +7,8 @@ const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/vendors", label: "Vendors" },
+  { href: "/admin/riders", label: "Riders" },
 ];
 
 export default async function AdminLayout({

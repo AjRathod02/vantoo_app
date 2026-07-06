@@ -1,3 +1,7 @@
+export * from "./types/vendor.js";
+export * from "./types/rider.js";
+export * from "./validation/vendor.js";
+export * from "./validation/rider.js";
 export * from "./types/auth.js";
 export * from "./types/common.js";
 export * from "./types/catalog.js";

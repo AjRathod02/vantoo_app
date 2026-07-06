@@ -13,12 +13,12 @@ export declare const registerSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
@@ -30,7 +30,7 @@ export declare const registerSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }, {
@@ -42,7 +42,7 @@ export declare const registerSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }>;
@@ -57,12 +57,12 @@ export declare const loginSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
@@ -71,7 +71,7 @@ export declare const loginSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }, {
@@ -80,7 +80,7 @@ export declare const loginSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }>;
@@ -90,11 +90,11 @@ export declare const otpSendSchema: z.ZodObject<{
     purpose: z.ZodEnum<["login", "register", "password_reset", "phone_verify", "email_verify"]>;
 }, "strip", z.ZodTypeAny, {
     identifier: string;
-    channel: "sms" | "email" | "whatsapp";
+    channel: "email" | "sms" | "whatsapp";
     purpose: "login" | "register" | "password_reset" | "phone_verify" | "email_verify";
 }, {
     identifier: string;
-    channel: "sms" | "email" | "whatsapp";
+    channel: "email" | "sms" | "whatsapp";
     purpose: "login" | "register" | "password_reset" | "phone_verify" | "email_verify";
 }>;
 export declare const otpVerifySchema: z.ZodObject<{
@@ -111,36 +111,36 @@ export declare const otpVerifySchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
+    otp: string;
     identifier: string;
     purpose: "login" | "register" | "password_reset" | "phone_verify" | "email_verify";
-    otp: string;
     firstName?: string | undefined;
     lastName?: string | undefined;
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }, {
+    otp: string;
     identifier: string;
     purpose: "login" | "register" | "password_reset" | "phone_verify" | "email_verify";
-    otp: string;
     firstName?: string | undefined;
     lastName?: string | undefined;
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }>;
@@ -181,12 +181,12 @@ export declare const oauthGoogleSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
@@ -194,7 +194,7 @@ export declare const oauthGoogleSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }, {
@@ -202,7 +202,7 @@ export declare const oauthGoogleSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
 }>;
@@ -219,12 +219,12 @@ export declare const oauthAppleSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }, {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
@@ -234,7 +234,7 @@ export declare const oauthAppleSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
     authorizationCode?: string | undefined;
@@ -245,7 +245,7 @@ export declare const oauthAppleSchema: z.ZodObject<{
     device?: {
         fingerprint: string;
         deviceName?: string | undefined;
-        platform?: "web" | "ios" | "android" | "unknown" | undefined;
+        platform?: "unknown" | "web" | "ios" | "android" | undefined;
         pushToken?: string | undefined;
     } | undefined;
     authorizationCode?: string | undefined;
