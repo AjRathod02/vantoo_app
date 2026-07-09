@@ -90,13 +90,68 @@ export function isOngoing(status: OrderStatus) {
 }
 
 export function getTrackingSteps(): OrderStatus[] {
-  return ["confirmed", "preparing", "packed", "in_transit", "delivered"];
+  return [
+    "confirmed",
+    "preparing",
+    "assigned",
+    "picked",
+    "in_transit",
+    "delivered",
+  ];
 }
 
 export function getStepIndex(status: OrderStatus): number {
   const normalized = normalizeStatus(status);
   const steps = getTrackingSteps();
-  if (normalized === "assigned" || normalized === "picked") return steps.indexOf("in_transit");
+  if (normalized === "packed") return steps.indexOf("preparing");
   const idx = steps.indexOf(normalized);
   return idx >= 0 ? idx : 0;
 }
+
+export type MapTrackingPhase =
+  | "confirmed"
+  | "preparing"
+  | "assigned"
+  | "picked"
+  | "near"
+  | "delivered";
+
+export function getMapTrackingPhase(status: OrderStatus): MapTrackingPhase {
+  const normalized = normalizeStatus(status);
+  if (normalized === "delivered") return "delivered";
+  if (normalized === "in_transit") return "near";
+  if (normalized === "picked") return "picked";
+  if (normalized === "assigned") return "assigned";
+  if (normalized === "preparing" || normalized === "packed") return "preparing";
+  return "confirmed";
+}
+
+export const mapPhaseMeta: Record<
+  MapTrackingPhase,
+  { title: string; subtitle: string }
+> = {
+  confirmed: {
+    title: "Order Confirmed",
+    subtitle: "Your order has been received",
+  },
+  preparing: {
+    title: "Preparing your order…",
+    subtitle: "The store is packing your items",
+  },
+  assigned: {
+    title: "Rider Assigned",
+    subtitle: "A delivery partner is heading to the store",
+  },
+  picked: {
+    title: "Order Picked Up",
+    subtitle: "Your rider is on the way to you",
+  },
+  near: {
+    title: "Rider is nearby",
+    subtitle: "Your order will arrive shortly",
+  },
+  delivered: {
+    title: "Delivered",
+    subtitle: "Enjoy your order!",
+  },
+};

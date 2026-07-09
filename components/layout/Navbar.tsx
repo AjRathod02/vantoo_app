@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Heart, MapPin, Search, ShoppingCart, User } from "lucide-react";
+import { Heart, Search, ShoppingCart, User } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { LocationCityButton } from "@/components/location/LocationCityButton";
 import { useCartStore } from "@/lib/stores/cart";
 import { useWishlistStore } from "@/lib/stores/wishlist";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -12,7 +13,6 @@ import { useHydrated } from "@/lib/useHydrated";
 
 export function Navbar() {
   const router = useRouter();
-  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const hydrated = useHydrated();
   const itemCount = useCartStore((s) => s.totals().itemCount);
@@ -24,25 +24,20 @@ export function Navbar() {
     if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`);
   };
 
-  if (pathname.startsWith("/admin")) return null;
-
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">
-      <div className="container-page flex h-16 items-center gap-4">
-        <Logo />
+      <div className="container-page flex h-14 items-center gap-2 sm:h-16 sm:gap-4">
+        <Logo className="shrink-0" />
 
-        <button className="hidden items-center gap-1 rounded-xl px-2 py-1.5 text-sm text-ink-muted hover:bg-gray-50 lg:flex">
-          <MapPin className="h-4 w-4 text-brand-primary" />
-          <span className="font-medium text-ink">Bengaluru</span>
-        </button>
+        <LocationCityButton className="hidden lg:flex" />
 
-        <form onSubmit={onSearch} className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
+        <form onSubmit={onSearch} className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft sm:left-3.5" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for food, groceries, products and more..."
-            className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm placeholder:text-ink-soft focus:border-brand-primary focus:bg-white focus:outline-none"
+            placeholder="Search food, groceries..."
+            className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm placeholder:text-ink-soft focus:border-brand-primary focus:bg-white focus:outline-none sm:h-11 sm:pl-10 sm:pr-4 sm:placeholder:text-ink-soft"
           />
         </form>
 

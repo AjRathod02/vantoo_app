@@ -5,7 +5,15 @@ let redis: Redis | null = null;
 
 export function getRedis(): Redis {
   if (!redis) {
-    redis = new Redis(loadEnv().REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 3 });
+    redis = new Redis(loadEnv().REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+      retryStrategy: () => null,
+    });
+    redis.on("error", () => {
+      // Redis optional in local dev without Docker
+    });
   }
   return redis;
 }
@@ -32,6 +40,12 @@ export interface TrackingPayload {
   riderPhone: string;
   latitude: number;
   longitude: number;
+  speed?: number;
+  heading?: number;
+  riderRating?: number;
+  etaMinutes?: number;
+  distanceKm?: number;
+  distanceRemainingM?: number;
   updatedAt: string;
 }
 

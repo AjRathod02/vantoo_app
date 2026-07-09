@@ -2,9 +2,13 @@ import { loadEnv } from "../config/env.js";
 import { getRedis } from "../db/pool.js";
 
 export async function publishEvent(event: string, payload: Record<string, unknown>): Promise<void> {
-  const redis = getRedis();
-  if (redis.status !== "ready") await redis.connect();
-  await redis.publish("vantoo:events", JSON.stringify({ event, payload, timestamp: new Date().toISOString() }));
+  try {
+    const redis = getRedis();
+    if (redis.status !== "ready") await redis.connect();
+    await redis.publish("vantoo:events", JSON.stringify({ event, payload, timestamp: new Date().toISOString() }));
+  } catch {
+    // Redis optional in local dev
+  }
 }
 
 export async function notifyOrderStatusChange(order: {

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Plus } from "lucide-react";
+import { Heart, Plus, Minus } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { cn, formatINR } from "@/lib/utils";
 import { Rating } from "@/components/ui/Rating";
@@ -14,9 +14,15 @@ import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);
+  const updateQty = useCartStore((s) => s.updateQty);
+  const quantity = useCartStore(
+    (s) => s.items.find((i) => i.product.id === product.id)?.quantity ?? 0
+  );
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const wishlisted = useWishlistStore((s) => s.items.some((i) => i.id === product.id));
   const hydrated = useHydrated();
+
+  const inCart = hydrated && quantity > 0;
 
   const discount =
     product.originalPrice && product.originalPrice > product.price
@@ -97,26 +103,45 @@ export function ProductCard({ product }: { product: Product }) {
               </span>
             )}
           </div>
-          <button
-            aria-label="Add to cart"
-            disabled={!product.inStock}
-            onClick={() => {
-              if (!product.inStock) {
-                toast.error(`${product.name} is currently out of stock`);
-                return;
-              }
-              addItem(product);
-              toast.success(`${product.name} added to cart`);
-            }}
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-lg transition-colors",
-              product.inStock
-                ? "bg-brand-primary text-white hover:bg-brand-primaryDark"
-                : "cursor-not-allowed bg-gray-200 text-ink-soft"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          {inCart ? (
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-brand-primary text-white">
+              <button
+                aria-label="Decrease quantity"
+                onClick={() => updateQty(product.id, quantity - 1)}
+                className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-brand-primaryDark"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="w-5 text-center text-sm font-bold">{quantity}</span>
+              <button
+                aria-label="Increase quantity"
+                onClick={() => updateQty(product.id, quantity + 1)}
+                className="grid h-8 w-8 place-items-center rounded-lg transition-colors hover:bg-brand-primaryDark"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              aria-label="Add to cart"
+              disabled={!product.inStock}
+              onClick={() => {
+                if (!product.inStock) {
+                  toast.error(`${product.name} is currently out of stock`);
+                  return;
+                }
+                addItem(product);
+              }}
+              className={cn(
+                "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                product.inStock
+                  ? "bg-brand-primary text-white hover:bg-brand-primaryDark"
+                  : "cursor-not-allowed bg-gray-200 text-ink-soft"
+              )}
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

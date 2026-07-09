@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { formatINR } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { LocationStatusBadge } from "@/components/location/LocationStatusBadge";
 import type { OrderStatus } from "@/lib/types";
 
 interface VendorOrder {
@@ -44,9 +45,14 @@ export default function VendorOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Orders</h1>
-        <p className="text-sm text-ink-muted">Manage incoming orders from customers.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Orders</h1>
+          <p className="text-sm text-ink-muted">
+            Manage incoming orders from customers.
+          </p>
+        </div>
+        <LocationStatusBadge />
       </div>
 
       {orders.length === 0 ? (

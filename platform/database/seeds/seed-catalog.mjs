@@ -8,6 +8,26 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, "../../..");
+
+function loadEnvLocal() {
+  try {
+    for (const line of readFileSync(join(root, ".env.local"), "utf8").split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq === -1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      const value = trimmed.slice(eq + 1).trim();
+      if (key && process.env[key] === undefined) process.env[key] = value;
+    }
+  } catch {
+    // .env.local optional if DATABASE_URL is already set
+  }
+}
+
+loadEnvLocal();
+
 const { Client } = pg;
 
 const url = process.env.DATABASE_URL;
@@ -18,7 +38,10 @@ if (!url) {
 
 const client = new Client({
   connectionString: url,
-  ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+  ssl:
+    process.env.DATABASE_SSL === "true" || url.includes("supabase.co")
+      ? { rejectUnauthorized: false }
+      : undefined,
 });
 
 function slugify(text) {
@@ -26,6 +49,11 @@ function slugify(text) {
 }
 
 async function ensureVendorUser() {
+  const approved = await client.query(
+    `SELECT user_id FROM vendor.vendors WHERE status = 'approved' ORDER BY created_at LIMIT 1`
+  );
+  if (approved.rows.length > 0) return approved.rows[0].user_id;
+
   const email = "vendor-system@vantoo.internal";
   const existing = await client.query(`SELECT id FROM auth.users WHERE email = $1`, [email]);
   if (existing.rows.length > 0) return existing.rows[0].id;

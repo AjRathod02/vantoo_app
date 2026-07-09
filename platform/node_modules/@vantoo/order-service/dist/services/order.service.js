@@ -13,9 +13,9 @@ export class OrderService {
                 pi.url AS image_url
          FROM catalog.products p
          JOIN catalog.product_variants pv ON pv.product_id = p.id
-           AND (pv.id = $2 OR ($2 IS NULL AND pv.is_default = TRUE))
+           AND (pv.id::text = $2 OR ($2 IS NULL AND pv.is_default = TRUE))
          LEFT JOIN catalog.product_images pi ON pi.product_id = p.id AND pi.is_primary = TRUE
-         WHERE (p.id = $1 OR p.legacy_id = $1) AND p.deleted_at IS NULL AND p.status = 'active'
+         WHERE (p.id::text = $1 OR p.legacy_id = $1) AND p.deleted_at IS NULL AND p.status = 'active'
          LIMIT 1`, [item.productId, item.variantId ?? null]);
             if (result.rows.length === 0) {
                 throw AppError.notFound(`Product not found: ${item.productId}`);
@@ -201,7 +201,7 @@ export class OrderService {
             values.push(userId);
         }
         const orderResult = await pool.query(`SELECT o.* FROM orders.orders o
-       WHERE (o.id = $1 OR o.order_number = $1)${userFilter}`, values);
+       WHERE (o.id::text = $1 OR o.order_number = $1)${userFilter}`, values);
         if (orderResult.rows.length === 0)
             throw AppError.notFound("Order not found");
         const itemsResult = await pool.query(`SELECT product_id, variant_id, product_name, variant_name, sku, image_url,

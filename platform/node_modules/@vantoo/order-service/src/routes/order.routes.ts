@@ -72,6 +72,9 @@ export async function orderRoutes(app: FastifyInstance) {
         error: { code: error.code, message: error.message },
       });
     }
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Order service error:", error);
+    }
     return reply.status(500).send({
       success: false,
       error: { code: ErrorCodes.INTERNAL_ERROR, message: "Internal error" },

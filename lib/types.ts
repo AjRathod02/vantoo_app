@@ -62,6 +62,11 @@ export interface Address {
   line2: string;
   city: string;
   pincode: string;
+  landmark?: string;
+  fullName?: string;
+  phone?: string;
+  latitude?: number;
+  longitude?: number;
   isDefault?: boolean;
 }
 
@@ -121,17 +126,77 @@ export interface User {
   phone: string;
   email?: string;
   avatar?: string;
-  role?: "customer" | "admin";
+  role?: "customer" | "admin" | "rider" | "vendor";
+}
+
+export type LocationRole = "customer" | "rider" | "vendor" | "admin";
+
+export type LocationPermissionState =
+  | "unsupported"
+  | "prompt"
+  | "granted"
+  | "denied";
+
+export interface DeviceLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  speed?: number;
+  heading?: number;
+  altitude?: number;
+  timestamp: string;
+}
+
+export interface UserLocationRecord extends DeviceLocation {
+  userId: string;
+  role: LocationRole;
+  name?: string;
+  online?: boolean;
+  orderId?: string;
+  city?: string;
+  updatedAt: string;
 }
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "processing" | "partially_refunded";
 export type RefundStatus = "none" | "requested" | "processing" | "completed";
 
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+}
+
 export interface OrderTracking {
   riderName?: string;
   riderPhone?: string;
+  riderRating?: number;
   riderLat?: number;
   riderLng?: number;
+  riderSpeed?: number;
+  riderHeading?: number;
+  storeName?: string;
+  storeLat?: number;
+  storeLng?: number;
+  customerLat?: number;
+  customerLng?: number;
+  etaMinutes?: number;
+  distanceKm?: number;
+  distanceRemainingM?: number;
+  updatedAt?: string;
+}
+
+export interface RiderLocationUpdate {
+  orderId: string;
+  lat: number;
+  lng: number;
+  speed?: number;
+  heading?: number;
+  timestamp?: string;
+  riderName?: string;
+  riderPhone?: string;
+  riderRating?: number;
+  etaMinutes?: number;
+  distanceKm?: number;
+  distanceRemainingM?: number;
 }
 
 export interface WalletTransaction {

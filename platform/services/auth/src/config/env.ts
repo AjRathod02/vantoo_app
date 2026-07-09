@@ -6,7 +6,10 @@ const envSchema = z.object({
   HOST: z.string().default("0.0.0.0"),
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().default("redis://localhost:6379"),
-  JWT_SECRET: z.string().min(32),
+  JWT_SECRET: z
+    .string()
+    .min(32)
+    .default("dev_jwt_secret_change_in_production_min_32_chars"),
   JWT_ACCESS_EXPIRY: z.string().default("15m"),
   JWT_REFRESH_EXPIRY: z.string().default("30d"),
   JWT_ISSUER: z.string().default("vantoo-auth"),

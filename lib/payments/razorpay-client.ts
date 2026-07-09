@@ -7,6 +7,13 @@ declare global {
   }
 }
 
+export type RazorpayMethodConfig = {
+  card?: boolean;
+  upi?: boolean;
+  netbanking?: boolean;
+  wallet?: boolean;
+};
+
 export interface RazorpayOptions {
   key: string;
   amount: number;
@@ -16,11 +23,23 @@ export interface RazorpayOptions {
   order_id: string;
   prefill?: { name?: string; email?: string; contact?: string };
   theme?: { color?: string };
+  method?: RazorpayMethodConfig;
   handler: (response: {
     razorpay_payment_id: string;
     razorpay_order_id: string;
     razorpay_signature: string;
   }) => void;
+}
+
+export function razorpayMethodForPayment(
+  payment: "card" | "upi" | "netbanking"
+): RazorpayMethodConfig {
+  return {
+    card: payment === "card",
+    upi: payment === "upi",
+    netbanking: payment === "netbanking",
+    wallet: false,
+  };
 }
 
 export function loadRazorpayScript() {

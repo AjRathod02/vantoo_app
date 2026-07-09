@@ -36,13 +36,17 @@ const orderSchema = z.object({
   razorpayOrderId: z.string().optional(),
   razorpayPaymentId: z.string().optional(),
   address: addressSchema,
-  service: z.enum(["food", "grocery", "medicine", "ecommerce"]),
+  service: z.enum(["food", "grocery", "medicine", "ecommerce", "local_shop"]),
   idempotencyKey: z.string().optional(),
 });
 
 export async function GET() {
   const user = await getSessionUser();
-  const orders = await listOrders(user?.id);
+  if (!user) {
+    return NextResponse.json({ error: "Login required" }, { status: 401 });
+  }
+
+  const orders = await listOrders(user.id);
   return NextResponse.json({ orders });
 }
 

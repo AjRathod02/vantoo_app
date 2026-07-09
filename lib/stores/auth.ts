@@ -19,6 +19,8 @@ interface AuthState {
   }) => Promise<{ user?: User; needsEmailConfirmation?: boolean; message?: string }>;
   logout: () => Promise<void>;
   addAddress: (address: Address) => void;
+  updateAddress: (id: string, address: Partial<Address>) => void;
+  removeAddress: (id: string) => void;
 }
 
 function mapUser(
@@ -121,6 +123,16 @@ export const useAuthStore = create<AuthState>()(
       },
       addAddress: (address) =>
         set((state) => ({ addresses: [...state.addresses, address] })),
+      updateAddress: (id, patch) =>
+        set((state) => ({
+          addresses: state.addresses.map((a) =>
+            a.id === id ? { ...a, ...patch } : a
+          ),
+        })),
+      removeAddress: (id) =>
+        set((state) => ({
+          addresses: state.addresses.filter((a) => a.id !== id),
+        })),
     }),
     { name: "vantoo-auth", partialize: (s) => ({ addresses: s.addresses }) }
   )

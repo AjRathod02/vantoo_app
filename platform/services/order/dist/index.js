@@ -4,7 +4,12 @@ import { getPool, getRedis, closeConnections } from "./db/pool.js";
 async function main() {
     const env = loadEnv();
     await getPool().query("SELECT 1");
-    await getRedis().connect();
+    try {
+        await getRedis().connect();
+    }
+    catch (err) {
+        console.warn("Redis unavailable — order events disabled:", err instanceof Error ? err.message : err);
+    }
     const app = await buildApp();
     await app.listen({ port: env.PORT, host: env.HOST });
     console.log(`Order service listening on ${env.HOST}:${env.PORT}`);

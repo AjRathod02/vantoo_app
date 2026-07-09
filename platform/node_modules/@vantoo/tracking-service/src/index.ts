@@ -4,7 +4,14 @@ import { getRedis, closeRedis } from "./services/tracking.service.js";
 
 async function main() {
   const env = loadEnv();
-  await getRedis().connect();
+  try {
+    await getRedis().connect();
+  } catch (err) {
+    console.warn(
+      "Redis unavailable — live tracking disabled:",
+      err instanceof Error ? err.message : err
+    );
+  }
   const app = await buildApp();
   await app.listen({ port: env.PORT, host: env.HOST });
   console.log(`Tracking service listening on ${env.HOST}:${env.PORT}`);

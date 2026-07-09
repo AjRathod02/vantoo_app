@@ -1,0 +1,12 @@
+export default {
+  expo: {
+    name: "Vantoo Rider",
+    slug: "vantoo-rider",
+    version: "1.0.0",
+    orientation: "portrait",
+    scheme: "vantoo-rider",
+    userInterfaceStyle: "light",
+    ios: { supportsTablet: true, bundleIdentifier: "com.vantoo.rider" },
+    android: { package: "com.vantoo.rider" },
+  },
+};

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Package, ShoppingBag, Users } from "lucide-react";
-import { listOrders } from "@/lib/server/orders";
+import { listAllOrders } from "@/lib/server/orders";
 import { listProducts } from "@/lib/server/products";
 
 export default async function AdminDashboardPage() {
-  const [orders, products] = await Promise.all([listOrders(), listProducts()]);
+  const [orders, products] = await Promise.all([listAllOrders(), listProducts()]);
 
   const ongoing = orders.filter(
     (o) => !["delivered", "cancelled"].includes(o.status)

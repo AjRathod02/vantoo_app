@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { loadEnv } from "../config/env.js";
 import { getRedis, getTracking, setTracking, channelKey } from "../services/tracking.service.js";
+import { emitRiderLocation } from "../socket.js";
 
 const updateSchema = z.object({
   riderId: z.string().uuid(),
@@ -9,6 +10,12 @@ const updateSchema = z.object({
   riderPhone: z.string(),
   latitude: z.number(),
   longitude: z.number(),
+  speed: z.number().optional(),
+  heading: z.number().optional(),
+  etaMinutes: z.number().optional(),
+  distanceKm: z.number().optional(),
+  distanceRemainingM: z.number().optional(),
+  riderRating: z.number().optional(),
 });
 
 async function internalAuth(request: import("fastify").FastifyRequest) {
@@ -37,6 +44,7 @@ export async function trackingRoutes(app: FastifyInstance) {
     const { orderId } = request.params as { orderId: string };
     const input = updateSchema.parse(request.body);
     const tracking = await setTracking(orderId, input);
+    emitRiderLocation(tracking);
     return reply.send({ success: true, data: tracking });
   });
 

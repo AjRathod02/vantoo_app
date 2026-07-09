@@ -41,7 +41,6 @@ export function ProductActions({ product }: { product: Product }) {
               return;
             }
             addItem(product, qty);
-            toast.success(`${product.name} added to cart`);
           }}
         >
           <ShoppingCart className="h-5 w-5" />

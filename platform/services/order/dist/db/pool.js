@@ -9,7 +9,9 @@ export function getPool() {
         const env = loadEnv();
         pool = new Pool({
             connectionString: env.DATABASE_URL,
-            ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+            ssl: env.NODE_ENV === "production" || env.DATABASE_URL.includes("supabase.co")
+                ? { rejectUnauthorized: false }
+                : undefined,
             max: 20,
         });
     }
@@ -17,7 +19,15 @@ export function getPool() {
 }
 export function getRedis() {
     if (!redis) {
-        redis = new Redis(loadEnv().REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 3 });
+        redis = new Redis(loadEnv().REDIS_URL, {
+            lazyConnect: true,
+            maxRetriesPerRequest: 1,
+            enableOfflineQueue: false,
+            retryStrategy: () => null,
+        });
+        redis.on("error", () => {
+            // Redis is optional in local dev without Docker
+        });
     }
     return redis;
 }

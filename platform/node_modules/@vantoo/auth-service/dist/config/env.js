@@ -20,6 +20,8 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().optional(),
     APPLE_CLIENT_ID: z.string().optional(),
     CORS_ORIGINS: z.string().default("http://localhost:3000"),
+    NOTIFICATION_SERVICE_URL: z.string().default("http://localhost:4009"),
+    INTERNAL_SERVICE_KEY: z.string().default("dev_internal_key_change_in_production"),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
 });
 let cached = null;

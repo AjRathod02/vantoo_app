@@ -5,7 +5,9 @@ import { formatINR } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { LocationStatusBadge } from "@/components/location/LocationStatusBadge";
 import type { OrderStatus } from "@/lib/types";
+import { useLocationStore } from "@/lib/stores/location";
 
 interface AvailableOrder {
   id: string;
@@ -29,6 +31,18 @@ export default function RiderDeliveriesPage() {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [tab, setTab] = useState<"active" | "available">("active");
+
+  const activeOrderId = deliveries[0]?.task.orderId;
+  const setActiveOrderId = useLocationStore((s) => s.setActiveOrderId);
+
+  useEffect(() => {
+    if (tab === "active" && activeOrderId) {
+      setActiveOrderId(activeOrderId);
+    } else {
+      setActiveOrderId(null);
+    }
+    return () => setActiveOrderId(null);
+  }, [tab, activeOrderId, setActiveOrderId]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -77,9 +91,14 @@ export default function RiderDeliveriesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Deliveries</h1>
-        <p className="text-sm text-ink-muted">Accept new orders and update delivery status.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Deliveries</h1>
+          <p className="text-sm text-ink-muted">
+            Accept new orders and update delivery status.
+          </p>
+        </div>
+        <LocationStatusBadge />
       </div>
 
       <div className="flex gap-2">

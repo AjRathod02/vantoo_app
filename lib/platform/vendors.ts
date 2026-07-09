@@ -64,7 +64,12 @@ export interface VendorStore {
 
 export async function getVendorMe(userId: string): Promise<VendorMeResponse> {
   if (!isPlatformEnabled()) return { vendor: null, stats: null };
-  return serviceFetch<VendorMeResponse>("vendor", "/v1/vendors/me", { userId });
+  try {
+    return await serviceFetch<VendorMeResponse>("vendor", "/v1/vendors/me", { userId });
+  } catch (e) {
+    console.error("Vendor service getVendorMe failed:", e);
+    return { vendor: null, stats: null };
+  }
 }
 
 export async function applyVendor(userId: string, data: Record<string, unknown>): Promise<VendorProfile> {

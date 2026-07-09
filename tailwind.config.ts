@@ -41,6 +41,23 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "cart-enter": {
+          "0%": { opacity: "0", transform: "translateY(24px) scale(0.95)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "cart-exit": {
+          "0%": { opacity: "1", transform: "translateY(0) scale(1)" },
+          "100%": { opacity: "0", transform: "translateY(24px) scale(0.95)" },
+        },
+        "count-pop": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)" },
+        },
+        ripple: {
+          "0%": { transform: "scale(0)", opacity: "0.45" },
+          "100%": { transform: "scale(2.5)", opacity: "0" },
+        },
         "pin-move": {
           "0%": { offsetDistance: "0%" },
           "100%": { offsetDistance: "100%" },
@@ -48,6 +65,10 @@ const config: Config = {
       },
       animation: {
         "fade-in": "fade-in 0.4s ease-out",
+        "cart-enter": "cart-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+        "cart-exit": "cart-exit 0.3s cubic-bezier(0.4, 0, 1, 1) forwards",
+        "count-pop": "count-pop 0.35s ease-out",
+        ripple: "ripple 0.55s ease-out",
       },
     },
   },

@@ -15,6 +15,7 @@ import {
   updateOrderTracking as updateMemoryTracking,
 } from "@/lib/server/orderStore";
 import { normalizeStatus } from "@/lib/orderStatus";
+import { customerCoordsFromPincode, DEFAULT_STORE } from "@/lib/tracking/geo";
 
 type DbOrderRow = {
   id: string;
@@ -102,8 +103,7 @@ function orderToRow(order: Order) {
 }
 
 export async function saveOrder(order: Order) {
-  if (isPlatformEnabled() && order.userId) {
-    // Platform orders are created via createPlatformOrder — this path is legacy-only
+  if (isPlatformEnabled() && order.platformId) {
     return order;
   }
 
@@ -127,10 +127,15 @@ export async function createOrder(
   input: Parameters<typeof createPlatformOrder>[1]
 ): Promise<Order> {
   if (isPlatformEnabled()) {
-    return createPlatformOrder(userId, input);
+    try {
+      return await createPlatformOrder(userId, input);
+    } catch (e) {
+      console.error("Platform createOrder failed, falling back:", e);
+    }
   }
 
   const id = `VT${Date.now().toString().slice(-8)}`;
+  const customer = customerCoordsFromPincode(input.address.pincode);
   const order: Order = {
     id,
     userId,
@@ -150,10 +155,16 @@ export async function createOrder(
     razorpayOrderId: input.razorpayOrderId,
     razorpayPaymentId: input.razorpayPaymentId,
     tracking: {
-      riderName: "Rajesh Kumar",
+      riderName: "Rahul Sharma",
       riderPhone: "+91 98765 43210",
-      riderLat: 12.9716,
-      riderLng: 77.5946,
+      riderRating: 4.9,
+      storeName: "Vantoo Store",
+      storeLat: DEFAULT_STORE.lat,
+      storeLng: DEFAULT_STORE.lng,
+      customerLat: customer.lat,
+      customerLng: customer.lng,
+      riderLat: DEFAULT_STORE.lat,
+      riderLng: DEFAULT_STORE.lng,
     },
   };
   await saveOrder(order);
@@ -194,7 +205,9 @@ export async function getOrder(id: string, userId?: string): Promise<Order | und
 }
 
 export async function listOrders(userId?: string): Promise<Order[]> {
-  if (isPlatformEnabled() && userId) {
+  if (!userId) return [];
+
+  if (isPlatformEnabled()) {
     try {
       return await listPlatformOrders(userId);
     } catch (e) {
@@ -205,10 +218,12 @@ export async function listOrders(userId?: string): Promise<Order[]> {
   if (hasAdminClient()) {
     try {
       const supabase = createAdminClient();
-      let query = supabase.from("orders").select("*").order("placed_at", { ascending: false });
-      if (userId) query = query.eq("user_id", userId);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", userId)
+        .order("placed_at", { ascending: false });
 
-      const { data, error } = await query;
       if (!error && data) {
         return (data as DbOrderRow[]).map((row) => {
           const order = rowToOrder(row);
@@ -220,9 +235,53 @@ export async function listOrders(userId?: string): Promise<Order[]> {
     }
   }
 
-  const orders = listMemoryOrders();
-  const filtered = userId ? orders.filter((o) => o.userId === userId) : orders;
-  return filtered.map((o) => ({ ...o, status: deriveLegacyStatus(o) }));
+  return listMemoryOrders()
+    .filter((o) => o.userId === userId)
+    .map((o) => ({ ...o, status: deriveLegacyStatus(o) }));
+}
+
+/** Admin-only: list all orders across customers. */
+export async function listAllOrders(): Promise<Order[]> {
+  if (isPlatformEnabled()) {
+    try {
+      const supabase = hasAdminClient() ? createAdminClient() : null;
+      if (supabase) {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .order("placed_at", { ascending: false });
+        if (!error && data) {
+          return (data as DbOrderRow[]).map((row) => {
+            const order = rowToOrder(row);
+            return { ...order, status: deriveLegacyStatus(order) };
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Platform listAllOrders failed:", e);
+    }
+  }
+
+  if (hasAdminClient()) {
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("placed_at", { ascending: false });
+
+      if (!error && data) {
+        return (data as DbOrderRow[]).map((row) => {
+          const order = rowToOrder(row);
+          return { ...order, status: deriveLegacyStatus(order) };
+        });
+      }
+    } catch (e) {
+      console.error("Supabase listAllOrders failed:", e);
+    }
+  }
+
+  return listMemoryOrders().map((o) => ({ ...o, status: deriveLegacyStatus(o) }));
 }
 
 export async function cancelOrder(id: string, userId: string, reason?: string): Promise<Order | undefined> {
@@ -230,8 +289,7 @@ export async function cancelOrder(id: string, userId: string, reason?: string): 
     try {
       return await cancelPlatformOrder(userId, id, reason);
     } catch (e) {
-      console.error("Platform cancelOrder failed:", e);
-      throw e;
+      console.error("Platform cancelOrder failed, falling back:", e);
     }
   }
 
@@ -261,7 +319,10 @@ export async function updateOrder(id: string, patch: Partial<Order>): Promise<Or
   return updated;
 }
 
-export async function updateOrderTracking(id: string, tracking: Order["tracking"]) {
+export async function updateOrderTracking(
+  id: string,
+  tracking: Partial<Order["tracking"]>
+) {
   updateMemoryTracking(id, tracking);
   if (!hasAdminClient()) return;
 

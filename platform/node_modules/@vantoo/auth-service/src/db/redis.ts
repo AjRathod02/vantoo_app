@@ -8,12 +8,14 @@ export function getRedis(): Redis {
   if (!redis) {
     const env = loadEnv();
     redis = new Redis(env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 1,
       lazyConnect: true,
+      enableOfflineQueue: false,
+      retryStrategy: () => null,
     });
 
-    redis.on("error", (err: Error) => {
-      logger.error({ err }, "Redis connection error");
+    redis.on("error", () => {
+      // Redis optional in local dev without Docker
     });
   }
   return redis;

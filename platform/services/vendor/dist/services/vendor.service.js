@@ -53,14 +53,19 @@ async function notify(templateName, userId, variables) {
         // non-blocking
     }
 }
+async function rbacSchema(pool) {
+    const result = await pool.query(`SELECT 1 FROM information_schema.tables WHERE table_schema = 'platform_auth' AND table_name = 'roles' LIMIT 1`);
+    return result.rowCount ? "platform_auth" : "auth";
+}
 async function assignVendorRole(userId, storeType) {
     const pool = getPool();
+    const schema = await rbacSchema(pool);
     const roleName = STORE_TYPE_TO_ROLE[storeType] ?? "vendor";
-    await pool.query(`INSERT INTO auth.user_roles (user_id, role_id)
-     SELECT $1, id FROM auth.roles WHERE name = $2
+    await pool.query(`INSERT INTO ${schema}.user_roles (user_id, role_id)
+     SELECT $1, id FROM ${schema}.roles WHERE name = $2
      ON CONFLICT (user_id, role_id) DO NOTHING`, [userId, roleName]);
-    await pool.query(`INSERT INTO auth.user_roles (user_id, role_id)
-     SELECT $1, id FROM auth.roles WHERE name = 'vendor'
+    await pool.query(`INSERT INTO ${schema}.user_roles (user_id, role_id)
+     SELECT $1, id FROM ${schema}.roles WHERE name = 'vendor'
      ON CONFLICT (user_id, role_id) DO NOTHING`, [userId]);
 }
 export class VendorService {
@@ -203,20 +208,31 @@ export class VendorService {
     }
     async getDashboardStats(vendorId) {
         const pool = getPool();
-        const [orders, products, stores] = await Promise.all([
-            pool.query(`SELECT COUNT(*)::INT AS total,
+        let orderStats = { total: 0, pending: 0, revenue: 0 };
+        try {
+            const orders = await pool.query(`SELECT COUNT(*)::INT AS total,
                 COUNT(*) FILTER (WHERE status IN ('confirmed','preparing','packed','assigned','picked','in_transit'))::INT AS pending,
                 COALESCE(SUM(total_amount) FILTER (WHERE status = 'delivered'), 0)::NUMERIC AS revenue
-         FROM orders.orders WHERE vendor_id = $1`, [vendorId]),
+         FROM orders.orders WHERE vendor_id = $1`, [vendorId]);
+            orderStats = {
+                total: orders.rows[0]?.total ?? 0,
+                pending: orders.rows[0]?.pending ?? 0,
+                revenue: Number(orders.rows[0]?.revenue ?? 0),
+            };
+        }
+        catch {
+            // orders schema may be absent on Supabase-only setups
+        }
+        const [products, stores] = await Promise.all([
             pool.query(`SELECT COUNT(*)::INT AS total,
                 COUNT(*) FILTER (WHERE status = 'active')::INT AS active
          FROM catalog.products WHERE vendor_id = $1 AND deleted_at IS NULL`, [vendorId]),
             pool.query(`SELECT COUNT(*)::INT AS count FROM vendor.stores WHERE vendor_id = $1 AND deleted_at IS NULL`, [vendorId]),
         ]);
         return {
-            totalOrders: orders.rows[0]?.total ?? 0,
-            pendingOrders: orders.rows[0]?.pending ?? 0,
-            revenue: Number(orders.rows[0]?.revenue ?? 0),
+            totalOrders: orderStats.total,
+            pendingOrders: orderStats.pending,
+            revenue: orderStats.revenue,
             totalProducts: products.rows[0]?.total ?? 0,
             activeProducts: products.rows[0]?.active ?? 0,
             storeCount: stores.rows[0]?.count ?? 0,

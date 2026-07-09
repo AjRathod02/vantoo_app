@@ -10,9 +10,17 @@ async function main() {
   const pool = getPool();
   await pool.query("SELECT 1");
 
-  const redis = getRedis();
-  await redis.connect();
-  await redis.ping();
+  try {
+    const redis = getRedis();
+    await redis.connect();
+    await redis.ping();
+    logger.info("Redis connected");
+  } catch (err) {
+    logger.warn(
+      { err: err instanceof Error ? err.message : err },
+      "Redis unavailable — OTP rate limiting may be limited in local dev"
+    );
+  }
 
   const app = await buildApp();
 

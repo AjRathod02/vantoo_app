@@ -31,6 +31,28 @@ export class OtpService {
         if (env.NODE_ENV === "development") {
             logger.info({ otp }, "OTP code (development only)");
         }
+        if (channel === "sms" || channel === "email" || channel === "whatsapp") {
+            try {
+                await fetch(`${env.NOTIFICATION_SERVICE_URL}/v1/notifications/send`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Internal-Key": env.INTERNAL_SERVICE_KEY,
+                    },
+                    body: JSON.stringify({
+                        channel: channel === "whatsapp" ? "whatsapp" : channel === "email" ? "email" : "sms",
+                        templateName: "otp_sms",
+                        variables: { otp, minutes: String(Math.floor(env.OTP_EXPIRY_SECONDS / 60)) },
+                        recipient: identifier,
+                        title: "Vantoo OTP",
+                        body: `Your Vantoo OTP is ${otp}. Valid for ${Math.floor(env.OTP_EXPIRY_SECONDS / 60)} minutes.`,
+                    }),
+                });
+            }
+            catch (err) {
+                logger.warn({ err }, "Failed to dispatch OTP via notification service");
+            }
+        }
         return { expiresIn: env.OTP_EXPIRY_SECONDS, otpId };
     }
     async verifyOtp(identifier, otp, purpose) {

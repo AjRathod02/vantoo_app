@@ -7,6 +7,21 @@ export interface OrderTrackingPayload {
   riderPhone: string;
   latitude: number;
   longitude: number;
+  speed?: number;
+  heading?: number;
+  riderLat?: number;
+  riderLng?: number;
+  riderSpeed?: number;
+  riderHeading?: number;
+  riderRating?: number;
+  storeLat?: number;
+  storeLng?: number;
+  storeName?: string;
+  customerLat?: number;
+  customerLng?: number;
+  etaMinutes?: number;
+  distanceKm?: number;
+  distanceRemainingM?: number;
   updatedAt: string;
 }
 

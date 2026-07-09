@@ -20,8 +20,6 @@ export function MobileNav() {
   const hydrated = useHydrated();
   const itemCount = useCartStore((s) => s.totals().itemCount);
 
-  if (pathname.startsWith("/admin")) return null;
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white sm:hidden">
       <div className="grid grid-cols-5 items-end px-2 pb-1 pt-2">

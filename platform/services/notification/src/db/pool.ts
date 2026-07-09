@@ -19,7 +19,15 @@ export function getPool(): pg.Pool {
 
 export function getRedis(): Redis {
   if (!redis) {
-    redis = new Redis(loadEnv().REDIS_URL, { lazyConnect: true });
+    redis = new Redis(loadEnv().REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+      retryStrategy: () => null,
+    });
+    redis.on("error", () => {
+      // Redis optional in local dev without Docker
+    });
   }
   return redis;
 }

@@ -1,10 +1,14 @@
-import type { Order, OrderStatus } from "@/lib/types";
+import type { Order, OrderStatus, RiderLocationUpdate } from "@/lib/types";
+import {
+  DEFAULT_STORE,
+  bearingDegrees,
+  customerCoordsFromPincode,
+  estimateEtaMinutes,
+  haversineKm,
+  lerpPoint,
+} from "@/lib/tracking/geo";
+import { publishRiderLocation } from "@/lib/tracking/broadcaster";
 
-/**
- * In-memory order store for the demo. Orders live for the lifetime of the
- * server process. The `globalThis` cache keeps a single instance across
- * Next.js dev hot-reloads.
- */
 const globalForOrders = globalThis as unknown as {
   vantooOrders?: Map<string, Order>;
 };
@@ -14,13 +18,82 @@ if (process.env.NODE_ENV !== "production") {
   globalForOrders.vantooOrders = orders;
 }
 
-// Compressed demo timeline (seconds since order placed).
 const STAGE_SCHEDULE: { status: OrderStatus; afterSeconds: number }[] = [
   { status: "confirmed", afterSeconds: 0 },
-  { status: "packed", afterSeconds: 20 },
-  { status: "in_transit", afterSeconds: 45 },
-  { status: "delivered", afterSeconds: 80 },
+  { status: "preparing", afterSeconds: 15 },
+  { status: "assigned", afterSeconds: 30 },
+  { status: "picked", afterSeconds: 45 },
+  { status: "in_transit", afterSeconds: 55 },
+  { status: "delivered", afterSeconds: 120 },
 ];
+
+const trackingTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+function enrichTracking(order: Order): Order["tracking"] {
+  const store = {
+    lat: order.tracking?.storeLat ?? DEFAULT_STORE.lat,
+    lng: order.tracking?.storeLng ?? DEFAULT_STORE.lng,
+  };
+  const customer = {
+    lat:
+      order.tracking?.customerLat ??
+      customerCoordsFromPincode(order.address.pincode).lat,
+    lng:
+      order.tracking?.customerLng ??
+      customerCoordsFromPincode(order.address.pincode).lng,
+  };
+
+  const rider = {
+    lat: order.tracking?.riderLat ?? store.lat,
+    lng: order.tracking?.riderLng ?? store.lng,
+  };
+
+  const distanceKm = haversineKm(rider, customer);
+  const speed = order.tracking?.riderSpeed ?? 28;
+  const heading =
+    order.tracking?.riderHeading ?? bearingDegrees(rider, customer);
+
+  return {
+    riderName: order.tracking?.riderName ?? "Rahul Sharma",
+    riderPhone: order.tracking?.riderPhone ?? "+91 98765 43210",
+    riderRating: order.tracking?.riderRating ?? 4.9,
+    storeName: order.tracking?.storeName ?? "Vantoo Store",
+    storeLat: store.lat,
+    storeLng: store.lng,
+    customerLat: customer.lat,
+    customerLng: customer.lng,
+    riderLat: rider.lat,
+    riderLng: rider.lng,
+    riderSpeed: speed,
+    riderHeading: heading,
+    distanceKm: Number(distanceKm.toFixed(2)),
+    distanceRemainingM: Math.round(distanceKm * 1000),
+    etaMinutes: estimateEtaMinutes(distanceKm, speed),
+    updatedAt: order.tracking?.updatedAt ?? new Date().toISOString(),
+  };
+}
+
+function broadcastTracking(order: Order) {
+  const tracking = enrichTracking(order);
+  if (!tracking?.riderLat || !tracking?.riderLng) return;
+
+  const payload: RiderLocationUpdate = {
+    orderId: order.id,
+    lat: tracking.riderLat,
+    lng: tracking.riderLng,
+    speed: tracking.riderSpeed,
+    heading: tracking.riderHeading,
+    timestamp: tracking.updatedAt,
+    riderName: tracking.riderName,
+    riderPhone: tracking.riderPhone,
+    riderRating: tracking.riderRating,
+    etaMinutes: tracking.etaMinutes,
+    distanceKm: tracking.distanceKm,
+    distanceRemainingM: tracking.distanceRemainingM,
+  };
+
+  publishRiderLocation(order.id, payload);
+}
 
 export function deriveStatus(order: Order): OrderStatus {
   if (order.status === "cancelled") return "cancelled";
@@ -33,23 +106,55 @@ export function deriveStatus(order: Order): OrderStatus {
 }
 
 export function saveOrder(order: Order) {
-  orders.set(order.id, order);
+  const withTracking = {
+    ...order,
+    tracking: enrichTracking(order),
+  };
+  orders.set(order.id, withTracking);
   scheduleTrackingSimulation(order.id);
 }
 
 export function updateOrderTracking(
   id: string,
-  tracking: Order["tracking"]
+  tracking: Partial<Order["tracking"]>
 ) {
   const order = orders.get(id);
   if (!order) return;
-  orders.set(id, {
+
+  const updated: Order = {
     ...order,
-    tracking: { ...order.tracking, ...tracking },
-  });
+    tracking: enrichTracking({
+      ...order,
+      tracking: {
+        ...order.tracking,
+        ...tracking,
+        updatedAt: new Date().toISOString(),
+      },
+    }),
+  };
+
+  orders.set(id, updated);
+  broadcastTracking(updated);
 }
 
-const trackingTimers = new Map<string, ReturnType<typeof setInterval>>();
+export function applyRiderLocationUpdate(
+  orderId: string,
+  update: Omit<RiderLocationUpdate, "orderId">
+) {
+  updateOrderTracking(orderId, {
+    riderLat: update.lat,
+    riderLng: update.lng,
+    riderSpeed: update.speed,
+    riderHeading: update.heading,
+    etaMinutes: update.etaMinutes,
+    distanceKm: update.distanceKm,
+    distanceRemainingM: update.distanceRemainingM,
+    updatedAt: update.timestamp ?? new Date().toISOString(),
+    riderName: update.riderName,
+    riderPhone: update.riderPhone,
+    riderRating: update.riderRating,
+  });
+}
 
 function scheduleTrackingSimulation(orderId: string) {
   if (trackingTimers.has(orderId)) return;
@@ -63,31 +168,54 @@ function scheduleTrackingSimulation(orderId: string) {
     }
 
     const status = deriveStatus(order);
-    const baseLat = 12.9716;
-    const baseLng = 77.5946;
+    const tracking = enrichTracking(order);
+    if (!tracking?.storeLat || !tracking?.storeLng || !tracking?.customerLat || !tracking?.customerLng) {
+      return;
+    }
+    const store = { lat: tracking.storeLat, lng: tracking.storeLng };
+    const customer = {
+      lat: tracking.customerLat,
+      lng: tracking.customerLng,
+    };
+
     const elapsed = (Date.now() - new Date(order.placedAt).getTime()) / 1000;
-    const progress = Math.min(elapsed / 80, 1);
+    const transitProgress = Math.min(Math.max((elapsed - 55) / 65, 0), 1);
+
+    let riderPoint = store;
+    if (status === "picked" || status === "in_transit") {
+      riderPoint = lerpPoint(store, customer, transitProgress);
+    } else if (status === "assigned") {
+      riderPoint = lerpPoint(store, store, 0.5);
+    }
+
+    const distanceKm = haversineKm(riderPoint, customer);
+    const speed = 22 + Math.sin(elapsed / 8) * 8;
+    const heading = bearingDegrees(riderPoint, customer);
 
     const updated: Order = {
       ...order,
       status,
       tracking: {
-        riderName: order.tracking?.riderName ?? "Rajesh Kumar",
-        riderPhone: order.tracking?.riderPhone ?? "+91 98765 43210",
-        riderLat: baseLat + progress * 0.02,
-        riderLng: baseLng + progress * 0.015,
+        ...tracking,
+        riderLat: riderPoint.lat,
+        riderLng: riderPoint.lng,
+        riderSpeed: Math.round(speed),
+        riderHeading: heading,
+        distanceKm: Number(distanceKm.toFixed(2)),
+        distanceRemainingM: Math.round(distanceKm * 1000),
+        etaMinutes: estimateEtaMinutes(distanceKm, speed),
+        updatedAt: new Date().toISOString(),
       },
     };
 
-    if (status === "in_transit" || status === "packed" || status === "confirmed") {
-      orders.set(orderId, updated);
-    }
+    orders.set(orderId, updated);
+    broadcastTracking(updated);
 
     if (status === "delivered") {
       clearInterval(timer);
       trackingTimers.delete(orderId);
     }
-  }, 5000);
+  }, 4000);
 
   trackingTimers.set(orderId, timer);
 }
@@ -95,14 +223,28 @@ function scheduleTrackingSimulation(orderId: string) {
 export function getOrder(id: string): Order | undefined {
   const order = orders.get(id);
   if (!order) return undefined;
-  return { ...order, status: deriveStatus(order) };
+  return {
+    ...order,
+    status: deriveStatus(order),
+    tracking: enrichTracking({ ...order, status: deriveStatus(order) }),
+  };
 }
 
 export function listOrders(): Order[] {
   return Array.from(orders.values())
-    .map((o) => ({ ...o, status: deriveStatus(o) }))
+    .map((o) => ({
+      ...o,
+      status: deriveStatus(o),
+      tracking: enrichTracking({ ...o, status: deriveStatus(o) }),
+    }))
     .sort(
       (a, b) =>
         new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime()
     );
+}
+
+export function listActiveDeliveries(): Order[] {
+  return listOrders().filter((o) =>
+    ["assigned", "picked", "in_transit", "preparing", "packed"].includes(o.status)
+  );
 }

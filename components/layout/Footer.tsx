@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
 
 const columns = [
   {
     title: "Company",
     links: [
-      { label: "About Us", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Blog", href: "#" },
+      { label: "About Us", href: "/about" },
+      { label: "Careers", href: "/careers" },
+      { label: "Blog", href: "/blog" },
       { label: "Sell on Vantoo", href: "/vendor/onboarding" },
       { label: "Deliver with Vantoo", href: "/rider/onboarding" },
     ],
@@ -36,13 +35,10 @@ const columns = [
 ];
 
 export function Footer() {
-  const pathname = usePathname();
-  if (pathname.startsWith("/admin")) return null;
-
   return (
     <footer className="mt-16 border-t border-gray-100 bg-brand-surface">
-      <div className="container-page grid gap-8 py-12 md:grid-cols-5">
-        <div className="md:col-span-2">
+      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-8 py-10 sm:gap-8 sm:py-12 lg:grid-cols-5">
+        <div className="col-span-2 lg:col-span-2">
           <Logo />
           <p className="mt-3 max-w-xs text-sm text-ink-muted">
             Your everyday super-app for food, groceries, medicine and shopping —

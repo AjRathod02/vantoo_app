@@ -1,14 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/layout/Navbar";
-import { SubNav } from "@/components/layout/SubNav";
-import { Footer } from "@/components/layout/Footer";
-import { MobileNav } from "@/components/layout/MobileNav";
+import { CustomerShell } from "@/components/layout/CustomerShell";
 import { Toaster } from "@/components/ui/Toaster";
-import { InstallPrompt } from "@/components/InstallPrompt";
 import { FirebaseAnalytics } from "@/components/FirebaseAnalytics";
 import { AuthProvider } from "@/components/AuthProvider";
+import { LocationProvider } from "@/components/location/LocationProvider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -49,13 +46,10 @@ export default function RootLayout({
     <html lang="en" className={montserrat.variable}>
       <body className="flex min-h-screen flex-col font-sans">
         <AuthProvider>
-          <Navbar />
-          <SubNav />
-          <main className="flex-1 pb-20 sm:pb-0">{children}</main>
-          <Footer />
-          <MobileNav />
+          <LocationProvider>
+            <CustomerShell>{children}</CustomerShell>
+          </LocationProvider>
           <Toaster />
-          <InstallPrompt />
           <FirebaseAnalytics />
         </AuthProvider>
       </body>

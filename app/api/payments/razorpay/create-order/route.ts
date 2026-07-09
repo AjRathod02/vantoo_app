@@ -42,9 +42,22 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     console.error("Razorpay create order:", e);
+    const rzpError = e as {
+      statusCode?: number;
+      error?: { description?: string; code?: string };
+    };
+    const description = rzpError.error?.description;
+    const isAuthFailure =
+      rzpError.statusCode === 401 ||
+      description?.toLowerCase().includes("authentication");
+
     return NextResponse.json(
-      { error: "Failed to create payment order" },
-      { status: 500 }
+      {
+        error: isAuthFailure
+          ? "Razorpay authentication failed. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET."
+          : description || "Failed to create payment order",
+      },
+      { status: isAuthFailure ? 401 : 500 }
     );
   }
 }
