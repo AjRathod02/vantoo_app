@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useLocationStore } from "@/lib/stores/location";
@@ -20,9 +20,22 @@ function roleFromPath(pathname: string, userRole?: string): LocationRole {
   return "customer";
 }
 
-function shouldTrack(pathname: string, role: LocationRole, loggedIn: boolean): boolean {
+function shouldTrack(pathname: string, loggedIn: boolean): boolean {
   if (!loggedIn) return false;
   if (pathname.startsWith("/login") || pathname.startsWith("/signup")) {
+    return false;
+  }
+  return true;
+}
+
+function shouldDisplayCity(pathname: string): boolean {
+  if (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/rider") ||
+    pathname.startsWith("/vendor") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup")
+  ) {
     return false;
   }
   return true;
@@ -60,6 +73,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const { upload } = useLocationUpload();
   const [promptOpen, setPromptOpen] = useState(false);
   const [promptDismissed, setPromptDismissed] = useState(false);
+  const autoRequestedRef = useRef(false);
 
   const role = useMemo(
     () => roleFromPath(pathname, user?.role),
@@ -67,9 +81,11 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   );
 
   const tracking = useMemo(
-    () => Boolean(user) && shouldTrack(pathname, role, Boolean(user)),
-    [user, pathname, role]
+    () => Boolean(user) && shouldTrack(pathname, Boolean(user)),
+    [user, pathname]
   );
+
+  const displayCity = useMemo(() => shouldDisplayCity(pathname), [pathname]);
 
   const mandatory = useMemo(
     () => requiresPermission(role, pathname),
@@ -87,11 +103,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   }, [browserPermission, permissionError, setPermission, setError]);
 
   useEffect(() => {
-    if (!user || !tracking || promptDismissed) return;
     if (browserPermission === "granted") {
       setSharingEnabled(true);
       return;
     }
+
+    if (!user || !tracking || promptDismissed) return;
     if (browserPermission === "prompt" || (mandatory && browserPermission === "denied")) {
       setPromptOpen(true);
     }
@@ -104,12 +121,25 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     setSharingEnabled,
   ]);
 
-  const active = tracking && sharingEnabled && browserPermission === "granted";
+  useEffect(() => {
+    if (!displayCity || user || browserPermission !== "prompt") return;
+    if (autoRequestedRef.current) return;
+    autoRequestedRef.current = true;
+
+    void requestPermission().then((ok) => {
+      if (ok) setSharingEnabled(true);
+    });
+  }, [displayCity, user, browserPermission, requestPermission, setSharingEnabled]);
+
+  const active =
+    sharingEnabled &&
+    browserPermission === "granted" &&
+    (displayCity || tracking);
 
   const handleLocationUpdate = useCallback(
     (device: DeviceLocation) => {
-      if (!user) return;
       setPosition(device);
+      if (!user) return;
       upload(device, {
         role,
         orderId: activeOrderId ?? undefined,

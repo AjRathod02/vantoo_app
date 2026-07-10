@@ -2,7 +2,12 @@ declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => {
       open: () => void;
-      on: (event: string, handler: (response: { error?: { description?: string } }) => void) => void;
+      on: (
+        event: string,
+        handler: (response: {
+          error?: { description?: string; reason?: string };
+        }) => void
+      ) => void;
     };
   }
 }
@@ -24,6 +29,7 @@ export interface RazorpayOptions {
   prefill?: { name?: string; email?: string; contact?: string };
   theme?: { color?: string };
   method?: RazorpayMethodConfig;
+  modal?: { ondismiss?: () => void };
   handler: (response: {
     razorpay_payment_id: string;
     razorpay_order_id: string;

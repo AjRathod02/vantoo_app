@@ -76,7 +76,22 @@ export async function requireUser() {
 }
 
 export async function requireAdmin() {
-  const user = await requireUser();
-  if (user.role !== "admin") throw new Error("Forbidden");
-  return user;
+  try {
+    const { requireAdminAuth } = await import("@/lib/admin/auth");
+    const ctx = await requireAdminAuth();
+    return {
+      id: ctx.admin.id,
+      name: ctx.admin.name,
+      phone: ctx.admin.phone ?? "",
+      email: ctx.admin.email,
+      role: "admin" as const,
+      adminRole: ctx.admin.role,
+      permissions: ctx.permissions,
+      sessionId: ctx.sessionId,
+    };
+  } catch {
+    const user = await requireUser();
+    if (user.role !== "admin") throw new Error("Forbidden");
+    return user;
+  }
 }

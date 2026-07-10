@@ -108,14 +108,17 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- Profiles
+drop policy if exists "Users read own profile" on public.profiles;
 create policy "Users read own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users update own profile" on public.profiles;
 create policy "Users update own profile"
   on public.profiles for update
   using (auth.uid() = id);
 
+drop policy if exists "Admins read all profiles" on public.profiles;
 create policy "Admins read all profiles"
   on public.profiles for select
   using (
@@ -126,16 +129,19 @@ create policy "Admins read all profiles"
   );
 
 -- Addresses
+drop policy if exists "Users manage own addresses" on public.addresses;
 create policy "Users manage own addresses"
   on public.addresses for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
 -- Products: public read, admin write
+drop policy if exists "Anyone can read products" on public.products;
 create policy "Anyone can read products"
   on public.products for select
   using (true);
 
+drop policy if exists "Admins manage products" on public.products;
 create policy "Admins manage products"
   on public.products for all
   using (
@@ -152,18 +158,22 @@ create policy "Admins manage products"
   );
 
 -- Orders
+drop policy if exists "Users read own orders" on public.orders;
 create policy "Users read own orders"
   on public.orders for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users create own orders" on public.orders;
 create policy "Users create own orders"
   on public.orders for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users update own orders (cancel)" on public.orders;
 create policy "Users update own orders (cancel)"
   on public.orders for update
   using (auth.uid() = user_id);
 
+drop policy if exists "Admins manage all orders" on public.orders;
 create policy "Admins manage all orders"
   on public.orders for all
   using (
@@ -179,4 +189,12 @@ create policy "Admins manage all orders"
     )
   );
 
-alter publication supabase_realtime add table public.orders;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'orders'
+  ) then
+    alter publication supabase_realtime add table public.orders;
+  end if;
+end $$;

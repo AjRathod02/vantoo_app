@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/server/auth";
+import { requireAdminAuth } from "@/lib/admin/auth";
+import { canRead } from "@/lib/admin/rbac";
 import { listAllOrders } from "@/lib/server/orders";
 import { listActiveDeliveries } from "@/lib/server/orderStore";
 
 export async function GET() {
-  const user = await getSessionUser();
-  if (user?.role !== "admin") {
+  try {
+    const ctx = await requireAdminAuth();
+    if (!canRead(ctx.permissions, "tracking")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -4,7 +4,27 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, "..");
 const { Client } = pg;
+
+function loadEnvFile(filename) {
+  try {
+    for (const line of readFileSync(join(root, filename), "utf8").split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq === -1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      const value = trimmed.slice(eq + 1).trim();
+      if (key && process.env[key] === undefined) process.env[key] = value;
+    }
+  } catch {
+    // optional if DATABASE_URL is already in the environment
+  }
+}
+
+loadEnvFile(".env");
+loadEnvFile(".env.local");
 
 const url = process.env.DATABASE_URL;
 if (!url) {

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ShoppingCart, Trash2, Tag, X } from "lucide-react";
 import { useCartStore } from "@/lib/stores/cart";
@@ -10,9 +11,11 @@ import { formatINR } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { OrderSummary } from "@/components/OrderSummary";
+import { CheckoutProgress } from "@/components/checkout/CheckoutProgress";
 import { toast } from "@/lib/stores/toast";
 
 export default function CartPage() {
+  const router = useRouter();
   const items = useCartStore((s) => s.items);
   const updateQty = useCartStore((s) => s.updateQty);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -54,6 +57,7 @@ export default function CartPage() {
   return (
     <div className="container-page py-6">
       <h1 className="mb-5 text-2xl font-bold text-ink">My Cart</h1>
+      <CheckoutProgress currentStep="cart" />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-3">
@@ -146,11 +150,16 @@ export default function CartPage() {
 
           <OrderSummary {...totals} />
 
-          <Link href="/checkout">
-            <Button size="lg" fullWidth>
-              Proceed to Checkout
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => router.back()}>
+              Back
             </Button>
-          </Link>
+            <Link href="/checkout/address" className="flex-1">
+              <Button size="lg" fullWidth>
+                Continue
+              </Button>
+            </Link>
+          </div>
         </aside>
       </div>
     </div>

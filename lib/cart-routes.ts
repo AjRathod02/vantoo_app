@@ -3,6 +3,7 @@ const CART_SUMMARY_HIDDEN_ROUTES = [
   "/signup",
   "/cart",
   "/checkout",
+  "/order",
 ] as const;
 
 export function isCartSummaryHidden(pathname: string): boolean {

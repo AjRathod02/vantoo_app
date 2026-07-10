@@ -3,12 +3,17 @@ import {
   listUserLocations,
   loadLocationsFromDb,
 } from "@/lib/server/userLocations";
-import { getSessionUser } from "@/lib/server/auth";
+import { requireAdminAuth } from "@/lib/admin/auth";
+import { canRead } from "@/lib/admin/rbac";
 import type { LocationRole } from "@/lib/types";
 
 export async function GET(request: Request) {
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
+  try {
+    const ctx = await requireAdminAuth();
+    if (!canRead(ctx.permissions, "tracking")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

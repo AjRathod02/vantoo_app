@@ -6,9 +6,11 @@ import {
   getSupabaseUrl,
   isSupabaseConfigured,
 } from "@/utils/supabase/env";
+import { verifyAccessToken, ADMIN_ACCESS_COOKIE, ADMIN_REFRESH_COOKIE } from "@/lib/admin/jwt";
 
-const PROTECTED = ["/checkout", "/orders", "/profile", "/wallet", "/vendor", "/rider"];
+const PROTECTED = ["/checkout", "/order", "/orders", "/profile", "/wallet", "/vendor", "/rider"];
 const ADMIN_PREFIX = "/admin";
+const ADMIN_PUBLIC = ["/admin/login"];
 
 async function getProfileRole(
   request: NextRequest,
@@ -44,6 +46,7 @@ async function getProfileRole(
   }
 }
 
+
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
@@ -59,15 +62,35 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith(ADMIN_PREFIX)) {
-    if (!user) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+    const isPublicAdmin = ADMIN_PUBLIC.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    );
 
-    const role = await getProfileRole(request, supabaseResponse, user.id);
-    if (role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
+    if (!isPublicAdmin) {
+      const accessToken = request.cookies.get(ADMIN_ACCESS_COOKIE)?.value;
+      let hasDedicatedAdmin = false;
+
+      if (accessToken) {
+        const payload = await verifyAccessToken(accessToken);
+        hasDedicatedAdmin = Boolean(payload);
+      }
+
+      if (!hasDedicatedAdmin) {
+        hasDedicatedAdmin = Boolean(request.cookies.get(ADMIN_REFRESH_COOKIE)?.value);
+      }
+
+      if (!hasDedicatedAdmin) {
+        if (!user) {
+          const loginUrl = new URL("/admin/login", request.url);
+          loginUrl.searchParams.set("redirect", pathname);
+          return NextResponse.redirect(loginUrl);
+        }
+
+        const role = await getProfileRole(request, supabaseResponse, user.id);
+        if (role !== "admin") {
+          return NextResponse.redirect(new URL("/admin/login", request.url));
+        }
+      }
     }
   }
 
