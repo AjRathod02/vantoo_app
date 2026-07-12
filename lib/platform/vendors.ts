@@ -151,6 +151,13 @@ export async function rejectVendor(userId: string, vendorId: string, reason: str
   });
 }
 
+export async function suspendVendor(userId: string, vendorId: string) {
+  return serviceFetch<VendorProfile>("vendor", `/v1/admin/vendors/${vendorId}/suspend`, {
+    method: "POST",
+    userId,
+  });
+}
+
 function mapProduct(p: Record<string, unknown>): Product {
   return {
     id: (p.legacyId as string) ?? (p.id as string),

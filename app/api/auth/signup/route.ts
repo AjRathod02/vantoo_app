@@ -4,40 +4,66 @@ import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
-import type { User } from "@/lib/types";
+import { applyReferralOnSignup, ensureReferralCode } from "@/lib/referral";
+
+const SUCCESS_MESSAGE =
+  "Account created successfully. Please log in to continue.";
 
 const schema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
   password: z.string().min(6),
+  referralCode: z.string().optional(),
+  dateOfBirth: z.string().optional(),
 });
 
-function mapUser(
-  authUser: { id: string; email?: string; user_metadata?: Record<string, string> },
-  profile?: { name?: string; phone?: string; role?: string } | null
-): User {
-  return {
-    id: authUser.id,
-    name: profile?.name || authUser.user_metadata?.name || "Vantoo User",
-    phone: profile?.phone || authUser.user_metadata?.phone || "",
-    email: authUser.email,
-    role: profile?.role === "admin" ? "admin" : "customer",
-  };
-}
-
-async function fetchProfile(
-  supabase: ReturnType<typeof createClient>,
-  userId: string
+async function afterSignup(
+  userId: string,
+  displayName: string,
+  options: {
+    referralCode?: string;
+    dateOfBirth?: string;
+    origin: string;
+    email?: string;
+  }
 ) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("name, phone, role")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (error) return null;
-  return data;
+  await ensureReferralCode(userId, displayName, options.origin);
+  if (options.referralCode?.trim()) {
+    await applyReferralOnSignup({
+      referredUserId: userId,
+      referredName: displayName,
+      referralCode: options.referralCode,
+    });
+  }
+  if (options.dateOfBirth && hasAdminClient()) {
+    try {
+      await createAdminClient()
+        .from("profiles")
+        .update({
+          date_of_birth: options.dateOfBirth,
+          dob_updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+    } catch (e) {
+      console.error("save DOB:", e);
+    }
+  }
+  if (options.email) {
+    try {
+      const { sendWelcomeEmail } = await import("@/lib/email");
+      const sent = await sendWelcomeEmail({
+        to: options.email,
+        customerName: displayName,
+        origin: options.origin,
+      });
+      if (!sent.ok) {
+        console.error("[Signup] welcome email failed:", sent.error);
+      }
+    } catch (e) {
+      console.error("[Signup] welcome email error:", e);
+    }
+  }
 }
 
 export async function POST(request: Request) {
@@ -57,11 +83,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, email, phone, password } = parsed.data;
+  const { name, email, phone, password, referralCode, dateOfBirth } =
+    parsed.data;
   const origin = new URL(request.url).origin;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const signupMeta = {
+    referralCode,
+    dateOfBirth,
+    origin,
+    email,
+  };
 
+  // Preferred path: admin createUser never establishes a browser session.
   if (hasAdminClient()) {
     const admin = createAdminClient();
     const { data: created, error: createError } =
@@ -73,29 +105,26 @@ export async function POST(request: Request) {
       });
 
     if (createError) {
-      const message =
-        createError.message.includes("already been registered")
-          ? "This email is already registered. Try signing in."
-          : createError.message;
+      const message = createError.message.includes("already been registered")
+        ? "This email is already registered. Try signing in."
+        : createError.message;
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    const { data: signIn, error: signInError } =
-      await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInError || !signIn.user) {
-      return NextResponse.json(
-        { error: signInError?.message ?? "Account created but sign-in failed." },
-        { status: 400 }
-      );
+    if (!created.user) {
+      return NextResponse.json({ error: "Signup failed." }, { status: 400 });
     }
 
-    const profile = await fetchProfile(supabase, signIn.user.id);
+    await afterSignup(created.user.id, name, signupMeta);
     return NextResponse.json(
-      { user: mapUser(signIn.user, profile ?? { name, phone, role: "customer" }) },
+      { registered: true, message: SUCCESS_MESSAGE },
       { status: 201 }
     );
   }
+
+  // Fallback: public signUp. If Supabase returns a session, clear it immediately.
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -112,7 +141,8 @@ export async function POST(request: Request) {
       : error.message.includes("already been registered") ||
           error.message.includes("already registered")
         ? "This email is already registered. Try signing in."
-        : error.message.includes("profiles") || error.message.includes("handle_new_user")
+        : error.message.includes("profiles") ||
+            error.message.includes("handle_new_user")
           ? "Database setup incomplete. Run supabase/migrations/001_initial_schema.sql in Supabase SQL Editor."
           : error.message;
 
@@ -123,20 +153,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Signup failed." }, { status: 400 });
   }
 
+  if (data.session) {
+    await supabase.auth.signOut();
+  }
+
+  await afterSignup(data.user.id, name, signupMeta);
+
   if (!data.session) {
     return NextResponse.json(
       {
+        registered: true,
         needsEmailConfirmation: true,
         message:
-          "Account created! Check your email to confirm, then sign in. Or disable email confirmation in Supabase → Authentication → Providers → Email.",
+          "Account created! Check your email to confirm, then sign in.",
       },
-      { status: 200 }
+      { status: 201 }
     );
   }
 
-  const profile = await fetchProfile(supabase, data.user.id);
   return NextResponse.json(
-    { user: mapUser(data.user, profile ?? { name, phone, role: "customer" }) },
+    { registered: true, message: SUCCESS_MESSAGE },
     { status: 201 }
   );
 }

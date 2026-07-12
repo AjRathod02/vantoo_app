@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -10,12 +10,13 @@ import { useAuthStore } from "@/lib/stores/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { CheckoutProgress } from "@/components/checkout/CheckoutProgress";
 import { Button } from "@/components/ui/Button";
+import { isNavigatingToOrderSuccess } from "@/lib/checkout/success-nav";
 import { verifyAndCompleteOrder } from "@/lib/checkout/payment-flow";
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 20;
 
-export default function PaymentVerifyingPage() {
+function PaymentVerifyingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const hydrated = useHydrated();
@@ -44,7 +45,10 @@ export default function PaymentVerifyingPage() {
   const razorpayPaymentId = verifyingPayment?.razorpayPaymentId;
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || completedRef.current) return;
+    // Cart may already be empty after a successful verify+complete — do not
+    // bounce back to review/cart and steal the success redirect.
+    if (isNavigatingToOrderSuccess()) return;
     if (!razorpayOrderId || !deliveryAddress || items.length === 0) {
       router.replace("/checkout/review");
     }
@@ -84,7 +88,7 @@ export default function PaymentVerifyingPage() {
       }
 
       if (result === "failed") {
-        router.replace("/checkout/payment-failed");
+        router.replace("/payment/failed");
         return;
       }
 
@@ -142,7 +146,7 @@ export default function PaymentVerifyingPage() {
           is in progress.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/checkout/payment-failed">
+          <Link href="/payment/failed">
             <Button variant="outline" size="sm">
               Payment Failed?
             </Button>
@@ -155,5 +159,19 @@ export default function PaymentVerifyingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentVerifyingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container-page py-10 text-center text-ink-muted">
+          Loading...
+        </div>
+      }
+    >
+      <PaymentVerifyingInner />
+    </Suspense>
   );
 }

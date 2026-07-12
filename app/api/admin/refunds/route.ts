@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin/auth";
+import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
 import { listAllOrders, updateOrder } from "@/lib/server/orders";
 import { logAdminAction } from "@/lib/admin/audit";
@@ -18,8 +18,8 @@ export async function GET() {
     );
 
     return NextResponse.json({ refunds });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }
 
@@ -60,10 +60,7 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json({ order });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }

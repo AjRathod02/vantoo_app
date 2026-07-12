@@ -27,7 +27,9 @@ export type AdminResource =
   | "tracking"
   | "settings"
   | "admin_users"
-  | "audit_logs";
+  | "audit_logs"
+  | "referrals"
+  | "reviews";
 
 export interface AdminUser {
   id: string;
@@ -148,11 +150,17 @@ export const ADMIN_MODULES: { resource: AdminResource; label: string; href: stri
   { resource: "vendors", label: "Vendors", href: "/admin/vendors" },
   { resource: "riders", label: "Riders", href: "/admin/riders" },
   { resource: "products", label: "Products", href: "/admin/products" },
+  { resource: "products", label: "Categories", href: "/admin/categories" },
+  { resource: "notifications", label: "Coupons", href: "/admin/coupons" },
+  { resource: "complaints", label: "Help Center", href: "/admin/help" },
   { resource: "orders", label: "Orders", href: "/admin/orders" },
   { resource: "tracking", label: "Live Tracking", href: "/admin/tracking" },
   { resource: "refunds", label: "Refunds", href: "/admin/refunds" },
   { resource: "payments", label: "Payments", href: "/admin/payments" },
+  { resource: "referrals", label: "Referrals", href: "/admin/referrals" },
+  { resource: "vendors", label: "Sponsorships", href: "/admin/sponsorships" },
   { resource: "complaints", label: "Support", href: "/admin/complaints" },
+  { resource: "reviews", label: "Reviews", href: "/admin/reviews" },
   { resource: "notifications", label: "Notifications", href: "/admin/notifications" },
   { resource: "reports", label: "Reports", href: "/admin/reports" },
   { resource: "settings", label: "Settings", href: "/admin/settings" },

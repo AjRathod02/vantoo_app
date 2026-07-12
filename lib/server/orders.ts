@@ -16,6 +16,11 @@ import {
 } from "@/lib/server/orderStore";
 import { normalizeStatus } from "@/lib/orderStatus";
 import { customerCoordsFromPincode, DEFAULT_STORE } from "@/lib/tracking/geo";
+import {
+  onOrderDelivered,
+  onOrderIneligible,
+  onReferredOrderPlaced,
+} from "@/lib/referral";
 
 type DbOrderRow = {
   id: string;
@@ -128,7 +133,11 @@ export async function createOrder(
 ): Promise<Order> {
   if (isPlatformEnabled()) {
     try {
-      return await createPlatformOrder(userId, input);
+      const order = await createPlatformOrder(userId, input);
+      void onReferredOrderPlaced(order).catch((e) =>
+        console.error("referral on order placed:", e)
+      );
+      return order;
     } catch (e) {
       console.error("Platform createOrder failed, falling back:", e);
     }
@@ -168,6 +177,9 @@ export async function createOrder(
     },
   };
   await saveOrder(order);
+  void onReferredOrderPlaced(order).catch((e) =>
+    console.error("referral on order placed:", e)
+  );
   return order;
 }
 
@@ -302,6 +314,9 @@ export async function cancelOrder(id: string, userId: string, reason?: string): 
     cancelledAt: new Date().toISOString(),
   };
   await saveOrder(updated);
+  void onOrderIneligible(updated, reason ?? "Order cancelled").catch((e) =>
+    console.error("referral cancel:", e)
+  );
   return updated;
 }
 
@@ -316,6 +331,25 @@ export async function updateOrder(id: string, patch: Partial<Order>): Promise<Or
   };
 
   await saveOrder(updated);
+
+  const prevStatus = existing.status;
+  const nextStatus = updated.status;
+
+  if (prevStatus !== "delivered" && nextStatus === "delivered") {
+    void onOrderDelivered(updated).catch((e) =>
+      console.error("referral on delivered:", e)
+    );
+  }
+
+  if (
+    ["cancelled", "returned", "refunded"].includes(nextStatus) &&
+    !["cancelled", "returned", "refunded"].includes(prevStatus)
+  ) {
+    void onOrderIneligible(updated, `Order ${nextStatus}`).catch((e) =>
+      console.error("referral ineligible:", e)
+    );
+  }
+
   return updated;
 }
 

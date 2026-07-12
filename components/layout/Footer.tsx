@@ -26,10 +26,13 @@ const columns = [
   {
     title: "Support",
     links: [
+      { label: "Help Center", href: "/help" },
+      { label: "Contact Us", href: "/contact" },
+      { label: "FAQs", href: "/help/faqs" },
+      { label: "Raise a Complaint", href: "/help/complaint" },
       { label: "Terms", href: "/policies/terms" },
       { label: "Privacy Policy", href: "/policies/privacy" },
       { label: "Refund Policy", href: "/policies/refund" },
-      { label: "Cancellation Policy", href: "/policies/cancellation" },
       { label: "Admin Login", href: "/admin/login" },
     ],
   },

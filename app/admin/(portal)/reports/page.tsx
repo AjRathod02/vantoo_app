@@ -1,39 +1,162 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+import { useEffect, useMemo, useState } from "react";
+import { AdminPageShell } from "@/components/admin/AdminPageShell";
+import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { ChartCard } from "@/components/admin/ChartCard";
+import { Button } from "@/components/ui/Button";
 import type { ChartDataPoint } from "@/lib/admin/types";
+import {
+  exportCsv,
+  exportExcel,
+  exportPdf,
+  tableHtmlFromRows,
+  type ExportColumn,
+} from "@/lib/admin/export";
+import { toast } from "@/lib/stores/toast";
 
 const REPORT_TYPES = [
-  { id: "revenue", label: "Revenue" },
   { id: "orders", label: "Orders" },
+  { id: "customers", label: "Customers" },
+  { id: "vendors", label: "Vendors" },
+  { id: "riders", label: "Riders" },
+  { id: "products", label: "Products" },
+  { id: "payments", label: "Payments" },
   { id: "refunds", label: "Refunds" },
+  { id: "reviews", label: "Reviews" },
+  { id: "complaints", label: "Complaints" },
+  { id: "revenue", label: "Revenue" },
+  { id: "inventory", label: "Inventory" },
+  { id: "delivery", label: "Delivery" },
   { id: "cancellations", label: "Cancellations" },
-  { id: "products", label: "Product Sales" },
-  { id: "delivery", label: "Delivery Performance" },
-  { id: "geographic", label: "Geographic Sales" },
+  { id: "geographic", label: "Geographic" },
 ];
+
+const PERIODS = [
+  { id: "daily", label: "Today" },
+  { id: "weekly", label: "Weekly" },
+  { id: "monthly", label: "Monthly" },
+  { id: "custom", label: "Custom range" },
+];
+
+type ReportRow = Record<string, string | number | boolean | null>;
 
 export default function AdminReportsPage() {
   const [type, setType] = useState("revenue");
+  const [period, setPeriod] = useState("weekly");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [report, setReport] = useState<Record<string, unknown> | null>(null);
+  const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scheduleEmail, setScheduleEmail] = useState("");
+  const [scheduleCadence, setScheduleCadence] = useState("weekly");
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/admin/reports?type=${type}&period=weekly`)
+    const params = new URLSearchParams({ type, period });
+    if (period === "custom" && dateFrom) params.set("from", dateFrom);
+    if (period === "custom" && dateTo) params.set("to", dateTo);
+
+    fetch(`/api/admin/reports?${params}`)
       .then((r) => r.json())
-      .then((d) => setReport(d.report))
+      .then((d) => {
+        setReport(d.report);
+        setRows((d.rows as ReportRow[]) ?? []);
+      })
+      .catch(() => toast.error("Failed to load report"))
       .finally(() => setLoading(false));
-  }, [type]);
+  }, [type, period, dateFrom, dateTo]);
 
   const chart = (report?.chart as ChartDataPoint[]) ?? [];
 
+  const columns: ExportColumn<ReportRow>[] = useMemo(() => {
+    if (rows.length === 0) {
+      return [
+        { key: "key", label: "Metric" },
+        { key: "value", label: "Value" },
+      ];
+    }
+    return Object.keys(rows[0]).map((k) => ({
+      key: k,
+      label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    }));
+  }, [rows]);
+
+  const exportRows = rows.length
+    ? rows
+    : report
+      ? Object.entries(report)
+          .filter(([k]) => k !== "chart" && k !== "stats")
+          .map(([key, value]) => ({
+            key,
+            value:
+              typeof value === "object" ? JSON.stringify(value) : (value as string | number | boolean | null),
+          }))
+      : [];
+
+  const filename = `vantoo-${type}-${period}-${new Date().toISOString().slice(0, 10)}`;
+
+  const handleExport = async (format: "csv" | "xlsx" | "pdf") => {
+    if (exportRows.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    try {
+      if (format === "csv") exportCsv(exportRows, columns, filename);
+      else if (format === "xlsx") exportExcel(exportRows, columns, filename);
+      else
+        exportPdf(
+          `Vantoo ${type} report`,
+          tableHtmlFromRows(exportRows, columns),
+          filename
+        );
+
+      await fetch("/api/admin/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "audit_export",
+          reportType: type,
+          format,
+          period,
+          from: dateFrom || null,
+          to: dateTo || null,
+          rowCount: exportRows.length,
+        }),
+      });
+      toast.success(`Exported ${format.toUpperCase()}`);
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
+  const scheduleReport = async () => {
+    if (!scheduleEmail) {
+      toast.error("Enter an email for scheduled delivery");
+      return;
+    }
+    const res = await fetch("/api/admin/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "schedule",
+        reportType: type,
+        format: "csv",
+        cadence: scheduleCadence,
+        emailTo: scheduleEmail,
+      }),
+    });
+    if (res.ok) toast.success("Scheduled report saved");
+    else toast.error("Could not schedule report");
+  };
+
   return (
-    <>
-      <AdminHeader title="Reports & Analytics" subtitle="Generate and export business reports" />
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+    <AdminPageShell
+      title="Reports & Analytics"
+      subtitle="Export PDF, Excel, or CSV · custom ranges · scheduled delivery"
+    >
+      <div className="space-y-6">
         <div className="flex flex-wrap gap-2">
           {REPORT_TYPES.map((r) => (
             <button
@@ -51,53 +174,139 @@ export default function AdminReportsPage() {
           ))}
         </div>
 
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap gap-2">
+            {PERIODS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPeriod(p.id)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  period === p.id
+                    ? "bg-ink text-white"
+                    : "border border-gray-200 bg-white text-ink-muted"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {period === "custom" && (
+            <>
+              <label className="text-sm">
+                <span className="mb-1 block text-ink-muted">From</span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-10 rounded-xl border border-gray-200 px-3"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-ink-muted">To</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-10 rounded-xl border border-gray-200 px-3"
+                />
+              </label>
+            </>
+          )}
+        </div>
+
         {loading ? (
-          <p className="text-ink-muted">Loading report...</p>
+          <AdminTableSkeleton rows={4} cols={3} />
         ) : report ? (
           <div className="space-y-4">
             {chart.length > 0 && (
               <ChartCard
                 title={`${type.charAt(0).toUpperCase() + type.slice(1)} Trend`}
                 data={chart}
-                valuePrefix={type === "revenue" ? "₹" : ""}
+                valuePrefix={type === "revenue" || type === "payments" ? "₹" : ""}
               />
             )}
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-card">
-              <h3 className="mb-3 font-semibold text-ink">Report Data</h3>
-              <pre className="max-h-96 overflow-auto rounded-xl bg-gray-50 p-4 text-xs text-ink-muted">
-                {JSON.stringify(report, null, 2)}
-              </pre>
+
+            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-card">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-5 py-4">
+                <h3 className="font-semibold text-ink">Report data</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleExport("csv")}>
+                    Export CSV
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleExport("xlsx")}>
+                    Export Excel
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleExport("pdf")}>
+                    Export PDF
+                  </Button>
+                </div>
+              </div>
+              {exportRows.length > 0 ? (
+                <div className="max-h-96 overflow-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="sticky top-0 bg-gray-50 text-ink-muted">
+                      <tr>
+                        {columns.map((c) => (
+                          <th key={c.key as string} className="px-4 py-2 font-medium">
+                            {c.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {exportRows.slice(0, 100).map((row, i) => (
+                        <tr key={i} className="border-t border-gray-50">
+                          {columns.map((c) => {
+                            const key = String(c.key);
+                            const value = (row as Record<string, unknown>)[key];
+                            return (
+                              <td key={key} className="px-4 py-2 text-ink-muted">
+                                {value === null || value === undefined ? "" : String(value)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <pre className="max-h-96 overflow-auto p-4 text-xs text-ink-muted">
+                  {JSON.stringify(report, null, 2)}
+                </pre>
+              )}
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-ink-muted hover:border-brand-primary"
-                onClick={() => toastExport("CSV")}
-              >
-                Export CSV
-              </button>
-              <button
-                type="button"
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-ink-muted hover:border-brand-primary"
-                onClick={() => toastExport("Excel")}
-              >
-                Export Excel
-              </button>
-              <button
-                type="button"
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-ink-muted hover:border-brand-primary"
-                onClick={() => toastExport("PDF")}
-              >
-                Export PDF
-              </button>
+
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-card">
+              <h3 className="mb-3 font-semibold text-ink">Schedule report</h3>
+              <div className="flex flex-wrap gap-3">
+                <input
+                  type="email"
+                  placeholder="Email delivery"
+                  value={scheduleEmail}
+                  onChange={(e) => setScheduleEmail(e.target.value)}
+                  className="h-11 min-w-[220px] flex-1 rounded-xl border border-gray-200 px-3 text-sm"
+                />
+                <select
+                  value={scheduleCadence}
+                  onChange={(e) => setScheduleCadence(e.target.value)}
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+                <Button onClick={scheduleReport}>Schedule</Button>
+              </div>
+              <p className="mt-2 text-xs text-ink-soft">
+                Scheduled jobs are stored for the report service to pick up. Email delivery
+                requires notification service configuration.
+              </p>
             </div>
           </div>
         ) : null}
       </div>
-    </>
+    </AdminPageShell>
   );
-}
-
-function toastExport(format: string) {
-  alert(`Export to ${format} — connect to report generation service in production.`);
 }

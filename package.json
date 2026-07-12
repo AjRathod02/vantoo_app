@@ -54,6 +54,7 @@
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
     "recharts": "^3.9.2",
+    "resend": "^6.17.2",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^2.5.4",
     "zod": "^3.23.8",

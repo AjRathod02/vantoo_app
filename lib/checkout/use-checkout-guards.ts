@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/stores/cart";
 import { useCheckoutStore } from "@/lib/stores/checkout";
 import { useHydrated } from "@/lib/useHydrated";
+import { isNavigatingToOrderSuccess } from "@/lib/checkout/success-nav";
 
 export function useRequireCart() {
   const router = useRouter();
@@ -12,7 +13,9 @@ export function useRequireCart() {
   const items = useCartStore((s) => s.items);
 
   useEffect(() => {
-    if (hydrated && items.length === 0) {
+    // After a successful payment the cart is cleared while checkout pages
+    // are still mounted — skip the empty-cart redirect so success wins.
+    if (hydrated && items.length === 0 && !isNavigatingToOrderSuccess()) {
       router.replace("/cart");
     }
   }, [hydrated, items.length, router]);

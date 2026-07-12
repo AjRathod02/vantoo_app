@@ -1,0 +1,1 @@
+{"message":"If an account exists for that email, a password reset link has been sent. Check your inbox and spam folder.","expiresAt":"2026-07-12T10:00:26.823Z","debugResetUrl":"http://localhost:3000/reset-password?token=07ae3615ea204de5baa8dfee3f8e4a30c5971d222eff04bdc82ebc2e319e6fa9&email=reset-test-1303015719%40example.com"}

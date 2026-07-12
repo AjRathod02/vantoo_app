@@ -16,6 +16,10 @@ const productSchema = z.object({
   rating: z.number(),
   reviews: z.number(),
   image: z.string(),
+  images: z.array(z.string()).optional(),
+  videos: z.array(z.string()).optional(),
+  thumbnailIndex: z.number().optional(),
+  attributes: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
   vendorId: z.string().optional(),
   unit: z.string().optional(),
   inStock: z.boolean(),
@@ -26,7 +30,11 @@ export async function GET() {
     await requireAdmin();
     const products = await listProducts();
     return NextResponse.json({ products });
-  } catch {
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Forbidden";
+    if (message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 }
@@ -43,7 +51,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ product }, { status: 201 });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Forbidden";
-    const status = message === "Forbidden" || message === "Unauthorized" ? 403 : 500;
+    if (message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const status = message === "Forbidden" ? 403 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

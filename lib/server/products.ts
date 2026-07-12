@@ -16,12 +16,35 @@ type DbProductRow = {
   rating: number;
   reviews: number;
   image: string;
+  images?: unknown;
+  videos?: unknown;
+  attributes?: unknown;
+  thumbnail_index?: number;
   vendor_id: string | null;
   unit: string | null;
   in_stock: boolean;
 };
 
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => {
+      if (typeof v === "string") return v;
+      if (v && typeof v === "object" && "url" in v) return String((v as { url: string }).url);
+      return "";
+    })
+    .filter(Boolean);
+}
+
+function asAttributes(value: unknown): Product["attributes"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Product["attributes"];
+}
+
 function rowToProduct(row: DbProductRow): Product {
+  const images = asStringArray(row.images);
+  const videos = asStringArray(row.videos);
+  const thumbIndex = row.thumbnail_index ?? 0;
   return {
     id: row.id,
     name: row.name,
@@ -33,7 +56,11 @@ function rowToProduct(row: DbProductRow): Product {
     originalPrice: row.original_price ? Number(row.original_price) : undefined,
     rating: Number(row.rating),
     reviews: row.reviews,
-    image: row.image,
+    image: images[thumbIndex] || images[0] || row.image,
+    images,
+    videos,
+    thumbnailIndex: thumbIndex,
+    attributes: asAttributes(row.attributes),
     vendorId: row.vendor_id ?? undefined,
     unit: row.unit ?? undefined,
     inStock: row.in_stock,
@@ -41,6 +68,13 @@ function rowToProduct(row: DbProductRow): Product {
 }
 
 function productToRow(product: Product) {
+  const images = product.images?.length
+    ? product.images
+    : product.image
+      ? [product.image]
+      : [];
+  const videos = product.videos ?? [];
+  const thumbnailIndex = product.thumbnailIndex ?? 0;
   return {
     id: product.id,
     name: product.name,
@@ -52,7 +86,11 @@ function productToRow(product: Product) {
     original_price: product.originalPrice ?? null,
     rating: product.rating,
     reviews: product.reviews,
-    image: product.image,
+    image: images[thumbnailIndex] || product.image || "",
+    images,
+    videos,
+    attributes: product.attributes ?? {},
+    thumbnail_index: thumbnailIndex,
     vendor_id: product.vendorId ?? null,
     unit: product.unit ?? null,
     in_stock: product.inStock,

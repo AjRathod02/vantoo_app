@@ -16,7 +16,13 @@ interface AuthState {
     email: string;
     phone: string;
     password: string;
-  }) => Promise<{ user?: User; needsEmailConfirmation?: boolean; message?: string }>;
+    referralCode?: string;
+    dateOfBirth?: string;
+  }) => Promise<{
+    registered?: boolean;
+    needsEmailConfirmation?: boolean;
+    message?: string;
+  }>;
   logout: () => Promise<void>;
   addAddress: (address: Address) => void;
   updateAddress: (id: string, address: Partial<Address>) => void;
@@ -90,27 +96,34 @@ export const useAuthStore = create<AuthState>()(
           throw e;
         }
       },
-      signup: async ({ name, email, phone, password }) => {
+      signup: async ({ name, email, phone, password, referralCode, dateOfBirth }) => {
         set({ loading: true });
         try {
           const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, password }),
+            body: JSON.stringify({
+              name,
+              email,
+              phone,
+              password,
+              referralCode,
+              dateOfBirth,
+            }),
           });
           const data = await res.json();
           if (!res.ok) {
             throw new Error(data.error ?? "Signup failed");
           }
-          if (data.needsEmailConfirmation) {
-            set({ loading: false });
-            return {
-              needsEmailConfirmation: true,
-              message: data.message,
-            };
-          }
-          set({ user: data.user, loading: false });
-          return { user: data.user as User };
+          // Never set a session user after registration — login is a separate step.
+          set({ user: null, loading: false });
+          return {
+            registered: true,
+            needsEmailConfirmation: Boolean(data.needsEmailConfirmation),
+            message:
+              data.message ??
+              "Account created successfully. Please log in to continue.",
+          };
         } catch (e) {
           set({ loading: false });
           throw e;

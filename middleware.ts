@@ -7,8 +7,22 @@ import {
   isSupabaseConfigured,
 } from "@/utils/supabase/env";
 import { verifyAccessToken, ADMIN_ACCESS_COOKIE, ADMIN_REFRESH_COOKIE } from "@/lib/admin/jwt";
+import { applySecurityHeaders } from "@/lib/security/headers";
+import { isAllowedMutatingOrigin } from "@/lib/security/csrf";
 
-const PROTECTED = ["/checkout", "/order", "/orders", "/profile", "/wallet", "/vendor", "/rider"];
+const PROTECTED = [
+  "/checkout",
+  "/order",
+  "/orders",
+  "/profile",
+  "/wallet",
+  "/refer",
+  "/help/complaint",
+  "/help/complaints",
+  "/help/request",
+  "/vendor",
+  "/rider",
+];
 const ADMIN_PREFIX = "/admin";
 const ADMIN_PUBLIC = ["/admin/login"];
 
@@ -46,8 +60,17 @@ async function getProfileRole(
   }
 }
 
+function finalize(response: NextResponse) {
+  return applySecurityHeaders(response);
+}
 
 export async function middleware(request: NextRequest) {
+  if (!isAllowedMutatingOrigin(request)) {
+    return finalize(
+      NextResponse.json({ error: "Forbidden origin" }, { status: 403 })
+    );
+  }
+
   const { supabaseResponse, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
@@ -58,7 +81,7 @@ export async function middleware(request: NextRequest) {
   if (isProtected && !user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    return finalize(NextResponse.redirect(loginUrl));
   }
 
   if (pathname.startsWith(ADMIN_PREFIX)) {
@@ -83,18 +106,18 @@ export async function middleware(request: NextRequest) {
         if (!user) {
           const loginUrl = new URL("/admin/login", request.url);
           loginUrl.searchParams.set("redirect", pathname);
-          return NextResponse.redirect(loginUrl);
+          return finalize(NextResponse.redirect(loginUrl));
         }
 
         const role = await getProfileRole(request, supabaseResponse, user.id);
         if (role !== "admin") {
-          return NextResponse.redirect(new URL("/admin/login", request.url));
+          return finalize(NextResponse.redirect(new URL("/admin/login", request.url)));
         }
       }
     }
   }
 
-  return supabaseResponse;
+  return finalize(supabaseResponse);
 }
 
 export const config = {

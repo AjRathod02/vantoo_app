@@ -9,6 +9,7 @@ import {
   Store,
   Package,
   Wallet,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ const links = [
   { href: "/medicine", label: "Medicine", icon: Pill },
   { href: "/ecommerce", label: "E-commerce", icon: Store },
   { href: "/orders", label: "My Orders", icon: Package },
+  { href: "/refer", label: "Refer", icon: Gift },
   { href: "/wallet", label: "Wallet", icon: Wallet },
 ];
 

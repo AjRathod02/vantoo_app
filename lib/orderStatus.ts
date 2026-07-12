@@ -89,10 +89,80 @@ export function isOngoing(status: OrderStatus) {
   return !["delivered", "cancelled", "refunded", "exchanged", "returned"].includes(status);
 }
 
+export const TIMELINE_LABELS: Record<string, string> = {
+  pending: "Order Placed",
+  confirmed: "Vendor Accepted",
+  preparing: "Food Preparation Started",
+  packed: "Order Ready",
+  assigned: "Rider Assigned",
+  picked: "Rider Picked Up Order",
+  in_transit: "Out for Delivery",
+  delivered: "Delivered",
+};
+
+/** Approximate offsets (seconds) from placedAt when history timestamps are missing */
+export const TIMELINE_OFFSETS: Record<string, number> = {
+  pending: 0,
+  confirmed: 0,
+  preparing: 15,
+  packed: 40,
+  assigned: 30,
+  picked: 45,
+  in_transit: 55,
+  delivered: 120,
+};
+
+export function buildOrderTimeline(
+  status: OrderStatus,
+  placedAt: string,
+  statusHistory?: Array<{ status: OrderStatus; at: string }>,
+  etaMinutes?: number
+) {
+  const steps = [
+    "confirmed",
+    "preparing",
+    "packed",
+    "assigned",
+    "picked",
+    "in_transit",
+    "delivered",
+  ] as OrderStatus[];
+
+  const historyMap = new Map(
+    (statusHistory ?? []).map((h) => [h.status, h.at])
+  );
+  const placed = new Date(placedAt).getTime();
+  const currentIndex = getStepIndex(status);
+
+  return steps.map((step, i) => {
+    const done = status !== "cancelled" && i <= currentIndex;
+    const at =
+      historyMap.get(step) ??
+      (done
+        ? new Date(placed + (TIMELINE_OFFSETS[step] ?? 0) * 1000).toISOString()
+        : null);
+    return {
+      status: step,
+      label: TIMELINE_LABELS[step] ?? statusMeta[step].label,
+      description: statusMeta[step].description,
+      at,
+      done,
+      active: status !== "cancelled" && i === currentIndex,
+      etaLabel:
+        step === "in_transit" && etaMinutes != null && !done
+          ? `ETA ~${etaMinutes} min`
+          : step === "in_transit" && done
+            ? "Arriving / arrived"
+            : undefined,
+    };
+  });
+}
+
 export function getTrackingSteps(): OrderStatus[] {
   return [
     "confirmed",
     "preparing",
+    "packed",
     "assigned",
     "picked",
     "in_transit",
@@ -103,7 +173,6 @@ export function getTrackingSteps(): OrderStatus[] {
 export function getStepIndex(status: OrderStatus): number {
   const normalized = normalizeStatus(status);
   const steps = getTrackingSteps();
-  if (normalized === "packed") return steps.indexOf("preparing");
   const idx = steps.indexOf(normalized);
   return idx >= 0 ? idx : 0;
 }

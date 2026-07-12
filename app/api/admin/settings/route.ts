@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin/auth";
+import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
 import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 import { listAdminUsers } from "@/lib/admin/db";
@@ -25,8 +25,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ settings });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }
 
@@ -60,7 +60,7 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ error: "Invalid update" }, { status: 400 });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }

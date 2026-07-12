@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
-import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
 import type { User } from "@/lib/types";
+import { clientIpFromRequest, rateLimit } from "@/lib/security/rate-limit";
 
 const schema = z.object({
   email: z.string().email(),
@@ -46,6 +46,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const ip = clientIpFromRequest(request);
+  const limited = rateLimit({
+    key: `login:${ip}`,
+    limit: 20,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!limited.ok) {
+    return NextResponse.json(
+      {
+        error: "Too many login attempts. Please try again later.",
+        retryAfterSec: limited.retryAfterSec,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limited.retryAfterSec) },
+      }
+    );
+  }
+
   const body = await request.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -56,6 +75,25 @@ export async function POST(request: Request) {
   }
 
   const { email, password } = parsed.data;
+  const emailKey = email.trim().toLowerCase();
+  const emailLimited = rateLimit({
+    key: `login-email:${emailKey}`,
+    limit: 10,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!emailLimited.ok) {
+    return NextResponse.json(
+      {
+        error: "Too many login attempts for this account. Please try again later.",
+        retryAfterSec: emailLimited.retryAfterSec,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(emailLimited.retryAfterSec) },
+      }
+    );
+  }
+
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -67,7 +105,7 @@ export async function POST(request: Request) {
   if (error) {
     const message =
       error.message === "Invalid login credentials"
-        ? "Invalid email or password. If you just signed up, confirm your email first."
+        ? "Invalid email or password."
         : error.message === "Email not confirmed"
           ? "Please confirm your email before signing in. Check your inbox."
           : error.message;

@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { getSessionUser } from "@/lib/server/auth";
@@ -29,6 +30,24 @@ export interface AdminAuthContext {
   admin: AdminUser;
   sessionId: string;
   permissions: AdminPermission[];
+}
+
+export class AdminUnauthorizedError extends Error {
+  constructor(message = "Unauthorized") {
+    super(message);
+    this.name = "AdminUnauthorizedError";
+  }
+}
+
+/** Map auth failures to 401; keep unexpected errors as 500. */
+export function adminErrorResponse(error: unknown) {
+  if (
+    error instanceof AdminUnauthorizedError ||
+    (error instanceof Error && error.message === "Unauthorized")
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.json({ error: "Failed" }, { status: 500 });
 }
 
 export async function getAdminFromCookies(): Promise<AdminAuthContext | null> {
@@ -89,7 +108,7 @@ export async function requireAdminAuth(): Promise<AdminAuthContext> {
     };
   }
 
-  throw new Error("Unauthorized");
+  throw new AdminUnauthorizedError();
 }
 
 export async function loginAdmin(

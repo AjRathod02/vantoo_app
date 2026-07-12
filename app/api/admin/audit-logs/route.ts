@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin/auth";
+import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
 import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ logs: data ?? [] });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }

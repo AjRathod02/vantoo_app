@@ -19,6 +19,8 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
+  Gift,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ADMIN_MODULES } from "@/lib/admin/types";
@@ -34,7 +36,9 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   tracking: MapPin,
   refunds: RotateCcw,
   payments: CreditCard,
+  referrals: Gift,
   complaints: Headphones,
+  reviews: Star,
   notifications: Bell,
   reports: BarChart3,
   settings: Settings,

@@ -21,12 +21,13 @@ import { toast } from "@/lib/stores/toast";
 
 const menu = [
   { label: "My Orders", icon: Package, href: "/orders" },
+  { label: "Edit Profile", icon: UserIcon, href: "/profile/edit" },
   { label: "Wishlist", icon: Heart, href: "/wishlist" },
   { label: "Wallet", icon: Wallet, href: "/wallet" },
-  { label: "Payment Methods", icon: CreditCard, href: "#" },
-  { label: "Refer Friends", icon: Gift, href: "#" },
-  { label: "Help Center", icon: HelpCircle, href: "#" },
-  { label: "Rate App", icon: Star, href: "#" },
+  { label: "Payment Methods", icon: CreditCard, href: "/profile/payments" },
+  { label: "Refer Friends", icon: Gift, href: "/refer" },
+  { label: "Help Center", icon: HelpCircle, href: "/help" },
+  { label: "Rate App", icon: Star, href: "/rate-app" },
 ];
 
 export default function ProfilePage() {

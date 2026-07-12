@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin/auth";
+import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
 import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 import { logAdminAction } from "@/lib/admin/audit";
@@ -21,9 +21,27 @@ export async function GET(
     }
 
     const db = createAdminClient();
-    const [profile, addresses] = await Promise.all([
+    const [profile, addresses, payments, tickets, reviews] = await Promise.all([
       db.from("profiles").select("*").eq("id", id).maybeSingle(),
       db.from("addresses").select("*").eq("user_id", id),
+      db
+        .from("orders")
+        .select("id, total, payment_method, payment_status, placed_at, status")
+        .eq("user_id", id)
+        .order("placed_at", { ascending: false })
+        .limit(50),
+      db
+        .from("support_tickets")
+        .select("*")
+        .eq("user_id", id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      db
+        .from("product_reviews")
+        .select("*")
+        .eq("user_id", id)
+        .order("created_at", { ascending: false })
+        .limit(50),
     ]);
 
     if (!profile.data) {
@@ -31,14 +49,23 @@ export async function GET(
     }
 
     const orders = (await listAllOrders()).filter((o) => o.userId === id);
+    const wallet = await db
+      .from("referral_wallets")
+      .select("*")
+      .eq("user_id", id)
+      .maybeSingle();
 
     return NextResponse.json({
       customer: profile.data,
       addresses: addresses.data ?? [],
       orders,
+      payments: payments.data ?? [],
+      complaints: tickets.data ?? [],
+      reviews: reviews.data ?? [],
+      wallet: wallet.data ?? null,
     });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }
 
@@ -54,10 +81,33 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const allowed = ["name", "phone", "email"];
-    const updates: Record<string, string> = {};
+    const allowed = [
+      "name",
+      "phone",
+      "email",
+      "gender",
+      "date_of_birth",
+      "avatar_url",
+      "account_status",
+      "email_verified",
+      "phone_verified",
+    ] as const;
+
+    const updates: Record<string, unknown> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) updates[key] = body[key];
+    }
+
+    // Map convenience action fields
+    if (body.action === "suspend") updates.account_status = "suspended";
+    if (body.action === "block") updates.account_status = "blocked";
+    if (body.action === "activate") updates.account_status = "active";
+
+    if (updates.account_status) {
+      const status = String(updates.account_status);
+      if (!["active", "suspended", "blocked", "deleted"].includes(status)) {
+        return NextResponse.json({ error: "Invalid account status" }, { status: 400 });
+      }
     }
 
     if (!hasAdminClient()) {
@@ -83,8 +133,8 @@ export async function PATCH(
     });
 
     return NextResponse.json({ customer: data });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }
 
@@ -103,7 +153,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
 
-    await createAdminClient().from("profiles").delete().eq("id", id);
+    // Soft-delete by default for auditability
+    await createAdminClient()
+      .from("profiles")
+      .update({ account_status: "deleted", name: "[deleted]" })
+      .eq("id", id);
 
     await logAdminAction({
       adminId: ctx.admin.id,
@@ -114,7 +168,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }

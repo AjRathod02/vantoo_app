@@ -21,11 +21,13 @@ export interface CartSummary {
 interface CartState {
   items: CartItem[];
   promoCode: string | null;
+  promoDiscount: number;
   updatedAt: number;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, quantity: number) => void;
   applyPromo: (code: string) => boolean;
+  applyPromoAsync: (code: string, subtotal: number) => Promise<boolean>;
   clearPromo: () => void;
   clearCart: () => void;
   totals: () => {
@@ -41,7 +43,8 @@ interface CartState {
 
 export function computeCartSummary(
   items: CartItem[],
-  promoCode: string | null
+  promoCode: string | null,
+  promoDiscount = 0
 ): CartSummary {
   const subtotal = items.reduce(
     (sum, i) => sum + i.product.price * i.quantity,
@@ -49,9 +52,12 @@ export function computeCartSummary(
   );
   const totalItems = items.length;
   const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
-  const discount = promoCode
-    ? Math.round(subtotal * (PROMO_CODES[promoCode] ?? 0))
-    : 0;
+  const discount =
+    promoDiscount > 0
+      ? Math.min(Math.round(promoDiscount), Math.round(subtotal))
+      : promoCode
+        ? Math.round(subtotal * (PROMO_CODES[promoCode] ?? 0))
+        : 0;
   const taxable = Math.max(subtotal - discount, 0);
   const tax = Math.round(taxable * TAX_RATE);
   const deliveryCharge = subtotal > 0 ? DELIVERY_FEE : 0;
@@ -75,6 +81,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       promoCode: null,
+      promoDiscount: 0,
       updatedAt: 0,
       addItem: (product, quantity = 1) =>
         set((state) => {
@@ -117,16 +124,51 @@ export const useCartStore = create<CartState>()(
       applyPromo: (code) => {
         const normalized = code.trim().toUpperCase();
         if (PROMO_CODES[normalized]) {
-          set({ promoCode: normalized, updatedAt: Date.now() });
+          set({
+            promoCode: normalized,
+            promoDiscount: 0,
+            updatedAt: Date.now(),
+          });
           return true;
         }
         return false;
       },
-      clearPromo: () => set({ promoCode: null, updatedAt: Date.now() }),
-      clearCart: () => set({ items: [], promoCode: null }),
+      applyPromoAsync: async (code, subtotal) => {
+        const normalized = code.trim().toUpperCase();
+        try {
+          const res = await fetch("/api/coupons/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: normalized, subtotal }),
+          });
+          if (res.ok) {
+            const data = (await res.json()) as { discount?: number };
+            set({
+              promoCode: normalized,
+              promoDiscount: Number(data.discount ?? 0),
+              updatedAt: Date.now(),
+            });
+            return true;
+          }
+        } catch {
+          // fall through to static codes
+        }
+        if (PROMO_CODES[normalized]) {
+          set({
+            promoCode: normalized,
+            promoDiscount: Math.round(subtotal * PROMO_CODES[normalized]),
+            updatedAt: Date.now(),
+          });
+          return true;
+        }
+        return false;
+      },
+      clearPromo: () =>
+        set({ promoCode: null, promoDiscount: 0, updatedAt: Date.now() }),
+      clearCart: () => set({ items: [], promoCode: null, promoDiscount: 0 }),
       totals: () => {
-        const { items, promoCode } = get();
-        const summary = computeCartSummary(items, promoCode);
+        const { items, promoCode, promoDiscount } = get();
+        const summary = computeCartSummary(items, promoCode, promoDiscount);
         const taxable = Math.max(summary.subtotal - summary.discount, 0);
         const tax = Math.round(taxable * TAX_RATE);
         return {
@@ -139,8 +181,8 @@ export const useCartStore = create<CartState>()(
         };
       },
       summary: () => {
-        const { items, promoCode } = get();
-        return computeCartSummary(items, promoCode);
+        const { items, promoCode, promoDiscount } = get();
+        return computeCartSummary(items, promoCode, promoDiscount);
       },
     }),
     {
@@ -148,6 +190,7 @@ export const useCartStore = create<CartState>()(
       partialize: (state) => ({
         items: state.items,
         promoCode: state.promoCode,
+        promoDiscount: state.promoDiscount,
       }),
     }
   )

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
+import { adminErrorResponse } from "@/lib/admin/auth";
 import { updateOrder } from "@/lib/server/orders";
 import type { OrderStatus } from "@/lib/types";
 import { z } from "zod";
@@ -54,7 +55,6 @@ export async function PATCH(
 
     return NextResponse.json({ order });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return adminErrorResponse(e);
   }
 }

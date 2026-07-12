@@ -11,6 +11,8 @@ import { AvailabilityBadge } from "@/components/AvailabilityBadge";
 import { ProductActions } from "@/components/ProductActions";
 import { ProductCard } from "@/components/ProductCard";
 import { SectionHeader } from "@/components/SectionHeader";
+import { ProductGallery } from "@/components/ProductGallery";
+import { ProductReviews } from "@/components/ProductReviews";
 
 const serviceLabel: Record<string, string> = {
   food: "Food",
@@ -22,6 +24,32 @@ const serviceLabel: Record<string, string> = {
 
 export function generateStaticParams() {
   return seedProducts.map((p) => ({ id: p.id }));
+}
+
+function detailRows(product: Awaited<ReturnType<typeof getProduct>>) {
+  if (!product) return [];
+  const p = product as typeof product & {
+    ingredients?: string;
+    weightSize?: string;
+    nutritionInfo?: Record<string, string>;
+    expiryInfo?: string;
+    storageInstructions?: string;
+    countryOfOrigin?: string;
+    manufacturer?: string;
+    sku?: string;
+    images?: string[];
+  };
+  return [
+    ["Brand", product.brand],
+    ["Category", product.category],
+    ["SKU", p.sku || product.id],
+    ["Weight / Size", p.weightSize || product.unit || "—"],
+    ["Ingredients", p.ingredients || "See packaging"],
+    ["Expiry", p.expiryInfo || "As printed on pack"],
+    ["Storage", p.storageInstructions || "Store in a cool, dry place"],
+    ["Country of Origin", p.countryOfOrigin || "India"],
+    ["Manufacturer", p.manufacturer || product.brand],
+  ] as [string, string][];
 }
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
@@ -38,6 +66,17 @@ export default async function ProductPage({ params }: { params: { id: string } }
         )
       : 0;
 
+  const extended = product as typeof product & { images?: string[]; videos?: string[] };
+  const gallery = [
+    product.image,
+    ...(extended.images ?? []),
+  ].filter((v, i, a) => v && a.indexOf(v) === i);
+
+  // Demo gallery extras for richer PDP when only one image exists
+  if (gallery.length === 1) {
+    gallery.push(product.image);
+  }
+
   return (
     <div className="container-page py-6">
       <nav className="mb-4 flex items-center gap-1 text-sm text-ink-muted">
@@ -53,17 +92,10 @@ export default async function ProductPage({ params }: { params: { id: string } }
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-2xl bg-gray-50">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-          />
+        <div className="relative">
+          <ProductGallery images={gallery} name={product.name} />
           {discount > 0 && (
-            <Badge tone="red" className="absolute left-4 top-4">
+            <Badge tone="red" className="absolute left-4 top-4 z-10">
               {discount}% OFF
             </Badge>
           )}
@@ -113,6 +145,29 @@ export default async function ProductPage({ params }: { params: { id: string } }
           </div>
         </div>
       </div>
+
+      <section className="mt-10 rounded-2xl border border-gray-100 p-5 shadow-card">
+        <h2 className="text-lg font-bold text-ink">Product Information</h2>
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+          {detailRows(product).map(([label, value]) => (
+            <div key={label} className="rounded-xl bg-gray-50 px-3 py-2">
+              <dt className="text-xs text-ink-soft">{label}</dt>
+              <dd className="mt-0.5 text-sm font-medium text-ink">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        {product.service === "food" && (
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-ink">Nutrition Information</h3>
+            <p className="mt-1 text-sm text-ink-muted">
+              Energy, protein, carbs, and fat values are listed on the product packaging.
+              Always check the label for allergens.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <ProductReviews productId={product.id} />
 
       {related.length > 0 && (
         <section className="mt-12">

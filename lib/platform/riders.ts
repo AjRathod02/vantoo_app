@@ -145,6 +145,13 @@ export async function rejectRider(userId: string, riderId: string, reason: strin
   });
 }
 
+export async function suspendRider(userId: string, riderId: string) {
+  return serviceFetch<RiderProfile>("rider", `/v1/admin/riders/${riderId}/suspend`, {
+    method: "POST",
+    userId,
+  });
+}
+
 export async function uploadRiderDocument(userId: string, data: Record<string, unknown>) {
   return serviceFetch("rider", "/v1/riders/documents", {
     method: "POST",

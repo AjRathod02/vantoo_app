@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin/auth";
+import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
 import { listAllOrders } from "@/lib/server/orders";
 
@@ -50,7 +50,7 @@ export async function GET() {
         placedAt: o.placedAt,
       })),
     });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }

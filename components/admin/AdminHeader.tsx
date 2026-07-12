@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LogOut, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/stores/toast";
@@ -26,13 +27,13 @@ export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
         {subtitle && <p className="text-xs text-ink-muted">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="rounded-xl p-2 text-ink-muted hover:bg-gray-50"
+        <Link
+          href="/admin/notifications"
+          className="rounded-xl p-2 text-ink-muted hover:bg-gray-50 hover:text-brand-primary"
           aria-label="Notifications"
         >
           <Bell className="h-5 w-5" />
-        </button>
+        </Link>
         <button
           type="button"
           onClick={handleLogout}

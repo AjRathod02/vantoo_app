@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin/auth";
+import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
 import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 import { logAdminAction } from "@/lib/admin/audit";
@@ -22,6 +22,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const priority = searchParams.get("priority");
+    const ticketId = searchParams.get("ticketId");
+    const wantReplies = searchParams.get("replies") === "1";
+
+    if (ticketId && wantReplies) {
+      const { data: replies } = await createAdminClient()
+        .from("support_ticket_replies")
+        .select("*")
+        .eq("ticket_id", ticketId)
+        .order("created_at", { ascending: true });
+      return NextResponse.json({ replies: replies ?? [] });
+    }
 
     let query = createAdminClient()
       .from("support_tickets")
@@ -35,15 +46,16 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ tickets: data ?? [] });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const ctx = await requireAdminAuth();
-    if (!hasPermission(ctx.permissions, "complaints", "create")) {
+    if (!hasPermission(ctx.permissions, "complaints", "create") &&
+        !hasPermission(ctx.permissions, "complaints", "update")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -51,6 +63,27 @@ export async function POST(request: Request) {
 
     if (!hasAdminClient()) {
       return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+    }
+
+    if (body.action === "reply") {
+      const { data, error } = await createAdminClient()
+        .from("support_ticket_replies")
+        .insert({
+          ticket_id: body.ticketId,
+          author_type: "admin",
+          author_id: ctx.admin.id,
+          author_name: ctx.admin.name || ctx.admin.email,
+          body: body.body,
+          attachments: body.attachments ?? [],
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      await createAdminClient()
+        .from("support_tickets")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", body.ticketId);
+      return NextResponse.json({ reply: data });
     }
 
     const { data, error } = await createAdminClient()
@@ -84,8 +117,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ ticket: data });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }
 
@@ -129,7 +162,7 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json({ ticket: data });
-  } catch {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  } catch (error) {
+    return adminErrorResponse(error);
   }
 }

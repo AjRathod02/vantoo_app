@@ -11,71 +11,105 @@ import {
   buildRiderMessageUrl,
 } from "@/lib/tracking/riderContact";
 import {
-  getTrackingSteps,
-  getStepIndex,
-  statusMeta,
+  buildOrderTimeline,
+  TIMELINE_LABELS,
 } from "@/lib/orderStatus";
 
 export const OrderTrackingTimeline = memo(function OrderTrackingTimeline({
   status,
+  placedAt,
+  statusHistory,
+  etaMinutes,
   className,
 }: {
   status: Order["status"];
+  placedAt?: string;
+  statusHistory?: Order["statusHistory"];
+  etaMinutes?: number;
   className?: string;
 }) {
-  const steps = getTrackingSteps();
-  const currentIndex =
-    status === "cancelled" ? -1 : getStepIndex(status);
+  const placed = placedAt ?? new Date().toISOString();
 
+  const items = [
+    {
+      status: "pending" as const,
+      label: TIMELINE_LABELS.pending ?? "Order Placed",
+      description: "Your order was placed successfully",
+      at: placed,
+      done: status !== "cancelled",
+      active: false,
+      etaLabel: undefined as string | undefined,
+    },
+    ...buildOrderTimeline(status, placed, statusHistory, etaMinutes),
+  ];
+
+  // Rider Accepted sits between assigned and picked — show as note on assigned when done
   return (
     <ol className={cn("space-y-0", className)}>
-      {steps.map((step, i) => {
-        const done = i <= currentIndex;
-        const active = i === currentIndex;
-        const meta = statusMeta[step];
-
-        return (
-          <li key={step} className="flex gap-3">
-            <div className="flex flex-col items-center">
-              <motion.span
-                layout
-                className={cn(
-                  "grid h-8 w-8 place-items-center rounded-full border-2 transition-colors",
-                  done
-                    ? "border-brand-primary bg-brand-primary text-white"
-                    : "border-gray-300 bg-white text-ink-soft",
-                  active && "ring-4 ring-brand-primary/20"
-                )}
-              >
-                {done ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <span className="h-2 w-2 rounded-full bg-gray-300" />
-                )}
-              </motion.span>
-              {i < steps.length - 1 && (
-                <span
-                  className={cn(
-                    "my-1 h-8 w-0.5",
-                    i < currentIndex ? "bg-brand-primary" : "bg-gray-200"
-                  )}
-                />
+      {items.map((item, i) => (
+        <li key={`${item.status}-${i}`} className="flex gap-3">
+          <div className="flex flex-col items-center">
+            <motion.span
+              layout
+              className={cn(
+                "grid h-8 w-8 place-items-center rounded-full border-2 transition-colors",
+                item.done
+                  ? "border-brand-primary bg-brand-primary text-white"
+                  : "border-gray-300 bg-white text-ink-soft",
+                item.active && "ring-4 ring-brand-primary/20"
               )}
-            </div>
-            <div className="pb-6 pt-1">
-              <p
+            >
+              {item.done ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <span className="h-2 w-2 rounded-full bg-gray-300" />
+              )}
+            </motion.span>
+            {i < items.length - 1 && (
+              <span
                 className={cn(
-                  "text-sm font-semibold",
-                  done ? "text-ink" : "text-ink-soft"
+                  "my-1 h-8 w-0.5",
+                  item.done && items[i + 1]?.done
+                    ? "bg-brand-primary"
+                    : "bg-gray-200"
                 )}
-              >
-                {meta.label}
+              />
+            )}
+          </div>
+          <div className="pb-6 pt-1">
+            <p
+              className={cn(
+                "text-sm font-semibold",
+                item.done ? "text-ink" : "text-ink-soft"
+              )}
+            >
+              {item.label}
+              {item.status === "assigned" && item.done ? " · Rider Accepted" : ""}
+            </p>
+            <p className="text-xs text-ink-soft">{item.description}</p>
+            {item.at && (
+              <p className="mt-1 text-xs font-medium text-ink-muted">
+                {new Date(item.at).toLocaleString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
               </p>
-              <p className="text-xs text-ink-soft">{meta.description}</p>
-            </div>
-          </li>
-        );
-      })}
+            )}
+            {item.etaLabel && (
+              <p className="mt-0.5 text-xs font-semibold text-brand-primary">
+                {item.etaLabel}
+              </p>
+            )}
+            {item.status === "in_transit" && item.active && etaMinutes != null && (
+              <p className="mt-0.5 text-xs font-semibold text-brand-primary">
+                Estimated Arrival: ~{etaMinutes} min
+              </p>
+            )}
+          </div>
+        </li>
+      ))}
     </ol>
   );
 });

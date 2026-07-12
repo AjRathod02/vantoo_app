@@ -1,4 +1,5 @@
 import type { Category } from "@/lib/types";
+import { createAdminClient, hasAdminClient } from "@/utils/supabase/admin";
 
 export const categories: Category[] = [
   { id: "c-pizza", name: "Pizza", service: "food", icon: "Pizza", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&q=80" },
@@ -21,3 +22,33 @@ export const categories: Category[] = [
   { id: "c-electronics", name: "Electronics", service: "ecommerce", icon: "Smartphone", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=80" },
   { id: "c-home", name: "Home", service: "ecommerce", icon: "Lamp", image: "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=400&q=80" },
 ];
+
+/** Active categories from DB with static catalog fallback. */
+export async function getCategories(service?: string): Promise<Category[]> {
+  if (hasAdminClient()) {
+    try {
+      let q = createAdminClient()
+        .from("product_categories")
+        .select("id, name, service, icon, image")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (service) q = q.eq("service", service);
+      const { data, error } = await q;
+      if (!error && data?.length) {
+        return data.map((row) => ({
+          id: row.id,
+          name: row.name,
+          service: row.service,
+          icon: row.icon,
+          image: row.image,
+        }));
+      }
+    } catch (e) {
+      console.error("getCategories:", e);
+    }
+  }
+
+  return service
+    ? categories.filter((c) => c.service === service)
+    : categories;
+}

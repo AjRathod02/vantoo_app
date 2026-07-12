@@ -214,6 +214,9 @@ function scheduleTrackingSimulation(orderId: string) {
     if (status === "delivered") {
       clearInterval(timer);
       trackingTimers.delete(orderId);
+      void import("@/lib/referral")
+        .then(({ onOrderDelivered }) => onOrderDelivered(updated))
+        .catch((e) => console.error("referral on simulated delivery:", e));
     }
   }, 4000);
 

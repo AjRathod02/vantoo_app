@@ -184,7 +184,12 @@ export default function TrackOrderPage({
             <h2 className="mb-4 text-sm font-bold text-ink">
               Order Timeline
             </h2>
-            <OrderTrackingTimeline status={order.status} />
+            <OrderTrackingTimeline
+              status={order.status}
+              placedAt={order.placedAt}
+              statusHistory={order.statusHistory}
+              etaMinutes={order.tracking?.etaMinutes ?? location?.etaMinutes}
+            />
           </div>
         </div>
       </div>

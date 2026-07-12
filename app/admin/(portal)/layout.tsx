@@ -18,6 +18,27 @@ export default async function AdminPortalLayout({
   const allowedResources = ctx.permissions.map((p) => p.resource);
   const uniqueResources = [...new Set(allowedResources)];
 
+  // Show Referrals nav before DB permission seed if admin can manage settings/payments
+  if (
+    !uniqueResources.includes("referrals") &&
+    (uniqueResources.includes("settings") ||
+      uniqueResources.includes("payments") ||
+      ctx.admin.role === "super_admin" ||
+      ctx.admin.role === "admin")
+  ) {
+    uniqueResources.push("referrals");
+  }
+
+  if (
+    !uniqueResources.includes("reviews") &&
+    (ctx.admin.role === "super_admin" ||
+      ctx.admin.role === "admin" ||
+      uniqueResources.includes("products") ||
+      uniqueResources.includes("complaints"))
+  ) {
+    uniqueResources.push("reviews");
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar

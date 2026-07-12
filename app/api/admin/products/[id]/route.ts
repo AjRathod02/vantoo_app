@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
+import { adminErrorResponse } from "@/lib/admin/auth";
 import { upsertProduct, deleteProduct, getProduct } from "@/lib/server/products";
 import type { Product } from "@/lib/types";
 import { z } from "zod";
@@ -16,6 +17,10 @@ const productSchema = z.object({
   rating: z.number(),
   reviews: z.number(),
   image: z.string(),
+  images: z.array(z.string()).optional(),
+  videos: z.array(z.string()).optional(),
+  thumbnailIndex: z.number().optional(),
+  attributes: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
   vendorId: z.string().optional(),
   unit: z.string().optional(),
   inStock: z.boolean(),
@@ -32,8 +37,8 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json({ product });
-  } catch {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  } catch (e) {
+    return adminErrorResponse(e);
   }
 }
 
@@ -51,8 +56,7 @@ export async function PUT(
     const product = await upsertProduct(parsed.data as Product);
     return NextResponse.json({ product });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return adminErrorResponse(e);
   }
 }
 
@@ -65,7 +69,6 @@ export async function DELETE(
     await deleteProduct(params.id);
     return NextResponse.json({ success: true });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return adminErrorResponse(e);
   }
 }

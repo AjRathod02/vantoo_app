@@ -8,6 +8,7 @@ import {
 } from "@/lib/payments/razorpay-client";
 import { buildOrderPayload, createVantooOrder } from "@/lib/checkout/order-api";
 import type { useCheckoutStore } from "@/lib/stores/checkout";
+import { markNavigatingToOrderSuccess } from "@/lib/checkout/success-nav";
 
 type CheckoutStore = ReturnType<typeof useCheckoutStore.getState>;
 
@@ -55,17 +56,25 @@ function redirectToSuccess(
   orderId: string,
   paymentId?: string
 ) {
+  markNavigatingToOrderSuccess();
   const params = new URLSearchParams({ orderId });
   if (paymentId) params.set("paymentId", paymentId);
-  router.push(`/order/success?${params.toString()}`);
+  // replace beats any competing replace("/cart") from empty-cart guards
+  router.replace(`/order/success?${params.toString()}`);
 }
 
-function redirectToPaymentFailed(router: AppRouterInstance) {
-  router.push("/checkout/payment-failed");
+function redirectToPaymentFailed(
+  router: AppRouterInstance,
+  reason?: string
+) {
+  const params = new URLSearchParams();
+  if (reason) params.set("reason", reason);
+  const qs = params.toString();
+  router.replace(qs ? `/payment/failed?${qs}` : "/payment/failed");
 }
 
 function redirectToVerifying(router: AppRouterInstance, razorpayOrderId: string) {
-  router.push(`/checkout/verifying?orderId=${encodeURIComponent(razorpayOrderId)}`);
+  router.replace(`/checkout/verifying?orderId=${encodeURIComponent(razorpayOrderId)}`);
 }
 
 async function completeVerifiedPayment({
@@ -118,9 +127,10 @@ async function completeVerifiedPayment({
   }
 
   saveAddressIfNew(selectedAddress, addressMode, savedAddresses, addAddress);
+  // Navigate first, then clear cart — guards check isNavigatingToOrderSuccess()
+  redirectToSuccess(router, order.id, verified.razorpayPaymentId);
   clearCart();
   checkoutStore.resetCheckout();
-  redirectToSuccess(router, order.id, verified.razorpayPaymentId);
   onPlacingChange(false);
 }
 
@@ -156,10 +166,10 @@ export async function placeOrder(params: PlaceOrderParams) {
         })
       );
       saveAddressIfNew(selectedAddress, addressMode, savedAddresses, addAddress);
+      redirectToSuccess(router, order.id);
       clearCart();
       checkoutStore.resetCheckout();
       onPlacingChange(false);
-      redirectToSuccess(router, order.id);
       return;
     }
 
@@ -262,7 +272,7 @@ export async function placeOrder(params: PlaceOrderParams) {
         failureReason: reason,
       });
       onPlacingChange(false);
-      redirectToPaymentFailed(router);
+      redirectToPaymentFailed(router, reason);
     });
   } catch (e) {
     toast.error(e instanceof Error ? e.message : "Could not place order");

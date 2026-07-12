@@ -14,6 +14,10 @@ export interface Product {
   rating: number;
   reviews: number;
   image: string;
+  images?: string[];
+  videos?: string[];
+  thumbnailIndex?: number;
+  attributes?: Record<string, string | number | boolean | null>;
   vendorId?: string;
   unit?: string;
   inStock: boolean;

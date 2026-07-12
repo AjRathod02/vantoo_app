@@ -145,18 +145,18 @@ export default function PaymentFailedPage() {
               Choose Another Payment Method
             </Button>
           </Link>
-          <Link href="/cart">
+          <Link href="/checkout/review">
             <Button variant="outline" fullWidth className="gap-2">
               <ShoppingCart className="h-4 w-4" />
-              Return to Cart
+              Return to Checkout
             </Button>
           </Link>
-          <a href="mailto:support@vantoo.com">
+          <Link href="/contact">
             <Button variant="secondary" fullWidth className="gap-2">
               <Headphones className="h-4 w-4" />
               Contact Support
             </Button>
-          </a>
+          </Link>
         </div>
 
         <div className="text-center">

@@ -19,12 +19,13 @@ export default function CartPage() {
   const items = useCartStore((s) => s.items);
   const updateQty = useCartStore((s) => s.updateQty);
   const removeItem = useCartStore((s) => s.removeItem);
-  const applyPromo = useCartStore((s) => s.applyPromo);
+  const applyPromoAsync = useCartStore((s) => s.applyPromoAsync);
   const clearPromo = useCartStore((s) => s.clearPromo);
   const promoCode = useCartStore((s) => s.promoCode);
   const totals = useCartStore((s) => s.totals());
   const hydrated = useHydrated();
   const [promo, setPromo] = useState("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   if (!hydrated) return null;
 
@@ -45,12 +46,18 @@ export default function CartPage() {
     );
   }
 
-  const onApplyPromo = () => {
-    if (applyPromo(promo)) {
-      toast.success("Promo code applied!");
-      setPromo("");
-    } else {
-      toast.error("Invalid promo code");
+  const onApplyPromo = async () => {
+    setApplyingPromo(true);
+    try {
+      const ok = await applyPromoAsync(promo, totals.subtotal);
+      if (ok) {
+        toast.success("Promo code applied!");
+        setPromo("");
+      } else {
+        toast.error("Invalid promo code");
+      }
+    } finally {
+      setApplyingPromo(false);
     }
   };
 
@@ -142,8 +149,13 @@ export default function CartPage() {
                 placeholder="Promo code (try SAVE10)"
                 className="h-10 flex-1 rounded-xl border border-gray-300 px-3 text-sm focus:border-brand-primary focus:outline-none"
               />
-              <Button size="sm" variant="secondary" onClick={onApplyPromo}>
-                Apply
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={onApplyPromo}
+                disabled={applyingPromo || !promo.trim()}
+              >
+                {applyingPromo ? "…" : "Apply"}
               </Button>
             </div>
           )}
