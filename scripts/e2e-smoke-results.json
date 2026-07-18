@@ -1,0 +1,904 @@
+{
+  "base": "http://localhost:3000",
+  "timestamp": "2026-07-12T13:10:25.256Z",
+  "total": 87,
+  "passed": 86,
+  "failed": 1,
+  "avgMs": 1727,
+  "failures": [
+    {
+      "name": "auth me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 200,
+      "ok": false,
+      "ms": 1258,
+      "error": "Expected 401|403, got 200",
+      "category": "api",
+      "bodySnippet": "{\"user\":null}"
+    }
+  ],
+  "byCategory": {
+    "page": {
+      "total": 32,
+      "passed": 32
+    },
+    "api": {
+      "total": 55,
+      "passed": 54
+    }
+  },
+  "results": [
+    {
+      "name": "page /",
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "ok": true,
+      "ms": 5853,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /food",
+      "method": "GET",
+      "path": "/food",
+      "status": 200,
+      "ok": true,
+      "ms": 8521,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /grocery",
+      "method": "GET",
+      "path": "/grocery",
+      "status": 200,
+      "ok": true,
+      "ms": 1393,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /medicine",
+      "method": "GET",
+      "path": "/medicine",
+      "status": 200,
+      "ok": true,
+      "ms": 922,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /ecommerce",
+      "method": "GET",
+      "path": "/ecommerce",
+      "status": 200,
+      "ok": true,
+      "ms": 2114,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /search",
+      "method": "GET",
+      "path": "/search",
+      "status": 200,
+      "ok": true,
+      "ms": 3409,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /cart",
+      "method": "GET",
+      "path": "/cart",
+      "status": 200,
+      "ok": true,
+      "ms": 2122,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /login",
+      "method": "GET",
+      "path": "/login",
+      "status": 200,
+      "ok": true,
+      "ms": 144,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /signup",
+      "method": "GET",
+      "path": "/signup",
+      "status": 200,
+      "ok": true,
+      "ms": 2037,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /reset-password",
+      "method": "GET",
+      "path": "/reset-password",
+      "status": 200,
+      "ok": true,
+      "ms": 1250,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /about",
+      "method": "GET",
+      "path": "/about",
+      "status": 200,
+      "ok": true,
+      "ms": 2343,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /contact",
+      "method": "GET",
+      "path": "/contact",
+      "status": 200,
+      "ok": true,
+      "ms": 1643,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /careers",
+      "method": "GET",
+      "path": "/careers",
+      "status": 200,
+      "ok": true,
+      "ms": 815,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /blog",
+      "method": "GET",
+      "path": "/blog",
+      "status": 200,
+      "ok": true,
+      "ms": 1310,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /help",
+      "method": "GET",
+      "path": "/help",
+      "status": 200,
+      "ok": true,
+      "ms": 1729,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /help/faqs",
+      "method": "GET",
+      "path": "/help/faqs",
+      "status": 200,
+      "ok": true,
+      "ms": 1418,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /help/contact",
+      "method": "GET",
+      "path": "/help/contact",
+      "status": 307,
+      "ok": true,
+      "ms": 2394,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /wishlist",
+      "method": "GET",
+      "path": "/wishlist",
+      "status": 200,
+      "ok": true,
+      "ms": 1607,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /rate-app",
+      "method": "GET",
+      "path": "/rate-app",
+      "status": 200,
+      "ok": true,
+      "ms": 1890,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /policies/privacy",
+      "method": "GET",
+      "path": "/policies/privacy",
+      "status": 200,
+      "ok": true,
+      "ms": 1529,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /policies/terms",
+      "method": "GET",
+      "path": "/policies/terms",
+      "status": 200,
+      "ok": true,
+      "ms": 1529,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /policies/refund",
+      "method": "GET",
+      "path": "/policies/refund",
+      "status": 200,
+      "ok": true,
+      "ms": 1685,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /policies/cancellation",
+      "method": "GET",
+      "path": "/policies/cancellation",
+      "status": 200,
+      "ok": true,
+      "ms": 1591,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /offline",
+      "method": "GET",
+      "path": "/offline",
+      "status": 200,
+      "ok": true,
+      "ms": 1752,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "page /admin/login",
+      "method": "GET",
+      "path": "/admin/login",
+      "status": 200,
+      "ok": true,
+      "ms": 196,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /checkout",
+      "method": "GET",
+      "path": "/checkout",
+      "status": 307,
+      "ok": true,
+      "ms": 18,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /orders",
+      "method": "GET",
+      "path": "/orders",
+      "status": 307,
+      "ok": true,
+      "ms": 27,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /profile",
+      "method": "GET",
+      "path": "/profile",
+      "status": 307,
+      "ok": true,
+      "ms": 17,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /wallet",
+      "method": "GET",
+      "path": "/wallet",
+      "status": 307,
+      "ok": true,
+      "ms": 19,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /refer",
+      "method": "GET",
+      "path": "/refer",
+      "status": 307,
+      "ok": true,
+      "ms": 16,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /vendor",
+      "method": "GET",
+      "path": "/vendor",
+      "status": 307,
+      "ok": true,
+      "ms": 17,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "guard /rider",
+      "method": "GET",
+      "path": "/rider",
+      "status": 307,
+      "ok": true,
+      "ms": 19,
+      "error": null,
+      "category": "page"
+    },
+    {
+      "name": "products list",
+      "method": "GET",
+      "path": "/api/products",
+      "status": 200,
+      "ok": true,
+      "ms": 3222,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "categories",
+      "method": "GET",
+      "path": "/api/categories",
+      "status": 200,
+      "ok": true,
+      "ms": 1738,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "search suggest empty",
+      "method": "GET",
+      "path": "/api/search/suggest?q=",
+      "status": 200,
+      "ok": true,
+      "ms": 1583,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "search suggest pizza",
+      "method": "GET",
+      "path": "/api/search/suggest?q=pizza",
+      "status": 200,
+      "ok": true,
+      "ms": 108,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "offers",
+      "method": "GET",
+      "path": "/api/offers",
+      "status": 200,
+      "ok": true,
+      "ms": 1415,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "restaurants",
+      "method": "GET",
+      "path": "/api/restaurants",
+      "status": 200,
+      "ok": true,
+      "ms": 1115,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "promotions",
+      "method": "GET",
+      "path": "/api/promotions",
+      "status": 200,
+      "ok": true,
+      "ms": 3445,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "blog",
+      "method": "GET",
+      "path": "/api/blog",
+      "status": 200,
+      "ok": true,
+      "ms": 1823,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "setup status",
+      "method": "GET",
+      "path": "/api/setup/status",
+      "status": 200,
+      "ok": true,
+      "ms": 6210,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "maps directions",
+      "method": "GET",
+      "path": "/api/maps/directions?origin=12.97,77.59&destination=12.98,77.60",
+      "status": 200,
+      "ok": true,
+      "ms": 2261,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "product detail",
+      "method": "GET",
+      "path": "/api/products/p-f2",
+      "status": 200,
+      "ok": true,
+      "ms": 2282,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "product reviews",
+      "method": "GET",
+      "path": "/api/products/p-f2/reviews",
+      "status": 200,
+      "ok": true,
+      "ms": 2403,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "auth me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 200,
+      "ok": false,
+      "ms": 1258,
+      "error": "Expected 401|403, got 200",
+      "category": "api",
+      "bodySnippet": "{\"user\":null}"
+    },
+    {
+      "name": "profile",
+      "method": "GET",
+      "path": "/api/profile",
+      "status": 401,
+      "ok": true,
+      "ms": 3104,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "orders",
+      "method": "GET",
+      "path": "/api/orders",
+      "status": 401,
+      "ok": true,
+      "ms": 2368,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "notifications",
+      "method": "GET",
+      "path": "/api/notifications",
+      "status": 401,
+      "ok": true,
+      "ms": 3077,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "referrals",
+      "method": "GET",
+      "path": "/api/referrals",
+      "status": 401,
+      "ok": true,
+      "ms": 1260,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "wallet",
+      "method": "GET",
+      "path": "/api/referrals/wallet",
+      "status": 401,
+      "ok": true,
+      "ms": 1174,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "saved payments",
+      "method": "GET",
+      "path": "/api/payments/saved",
+      "status": 401,
+      "ok": true,
+      "ms": 1247,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "support",
+      "method": "GET",
+      "path": "/api/support",
+      "status": 401,
+      "ok": true,
+      "ms": 1519,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "vendor me",
+      "method": "GET",
+      "path": "/api/vendor/me",
+      "status": 401,
+      "ok": true,
+      "ms": 1272,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "rider me",
+      "method": "GET",
+      "path": "/api/rider/me",
+      "status": 401,
+      "ok": true,
+      "ms": 1259,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin me",
+      "method": "GET",
+      "path": "/api/admin/auth/me",
+      "status": 401,
+      "ok": true,
+      "ms": 1238,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin dashboard",
+      "method": "GET",
+      "path": "/api/admin/dashboard",
+      "status": 401,
+      "ok": true,
+      "ms": 1439,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin customers",
+      "method": "GET",
+      "path": "/api/admin/customers",
+      "status": 401,
+      "ok": true,
+      "ms": 5581,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "login empty",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 400,
+      "ok": true,
+      "ms": 3434,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "login bad creds",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 400,
+      "ok": true,
+      "ms": 789,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "signup invalid",
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 400,
+      "ok": true,
+      "ms": 2768,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "forgot password missing",
+      "method": "POST",
+      "path": "/api/auth/forgot-password",
+      "status": 400,
+      "ok": true,
+      "ms": 1636,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin login empty",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "status": 401,
+      "ok": true,
+      "ms": 1607,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin login bad",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "status": 401,
+      "ok": true,
+      "ms": 478,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "coupon invalid",
+      "method": "POST",
+      "path": "/api/coupons/validate",
+      "status": 404,
+      "ok": true,
+      "ms": 1801,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "razorpay create unauth",
+      "method": "POST",
+      "path": "/api/payments/razorpay/create-order",
+      "status": 401,
+      "ok": true,
+      "ms": 1601,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "razorpay verify junk",
+      "method": "POST",
+      "path": "/api/payments/razorpay/verify",
+      "status": 401,
+      "ok": true,
+      "ms": 1801,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "invalid product id",
+      "method": "GET",
+      "path": "/api/products/not-a-real-id-xyz",
+      "status": 404,
+      "ok": true,
+      "ms": 212,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "orders cancel unauth",
+      "method": "POST",
+      "path": "/api/orders/fake-id/cancel",
+      "status": 401,
+      "ok": true,
+      "ms": 2521,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "SQL injection search",
+      "method": "GET",
+      "path": "/api/search/suggest?q='%20OR%201%3D1--",
+      "status": 200,
+      "ok": true,
+      "ms": 200,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "XSS search",
+      "method": "GET",
+      "path": "/api/search/suggest?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E",
+      "status": 200,
+      "ok": true,
+      "ms": 1815,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/orders",
+      "method": "GET",
+      "path": "/api/admin/orders",
+      "status": 403,
+      "ok": true,
+      "ms": 3255,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/products",
+      "method": "GET",
+      "path": "/api/admin/products",
+      "status": 401,
+      "ok": true,
+      "ms": 1401,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/vendors",
+      "method": "GET",
+      "path": "/api/admin/vendors",
+      "status": 401,
+      "ok": true,
+      "ms": 1531,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/riders",
+      "method": "GET",
+      "path": "/api/admin/riders",
+      "status": 401,
+      "ok": true,
+      "ms": 1529,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/refunds",
+      "method": "GET",
+      "path": "/api/admin/refunds",
+      "status": 401,
+      "ok": true,
+      "ms": 1881,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/payments",
+      "method": "GET",
+      "path": "/api/admin/payments",
+      "status": 401,
+      "ok": true,
+      "ms": 1484,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/reviews",
+      "method": "GET",
+      "path": "/api/admin/reviews",
+      "status": 401,
+      "ok": true,
+      "ms": 1462,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/complaints",
+      "method": "GET",
+      "path": "/api/admin/complaints",
+      "status": 401,
+      "ok": true,
+      "ms": 2258,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/coupons",
+      "method": "GET",
+      "path": "/api/admin/coupons",
+      "status": 401,
+      "ok": true,
+      "ms": 1066,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/categories",
+      "method": "GET",
+      "path": "/api/admin/categories",
+      "status": 401,
+      "ok": true,
+      "ms": 986,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/reports",
+      "method": "GET",
+      "path": "/api/admin/reports",
+      "status": 401,
+      "ok": true,
+      "ms": 1161,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/settings",
+      "method": "GET",
+      "path": "/api/admin/settings",
+      "status": 401,
+      "ok": true,
+      "ms": 1009,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/notifications",
+      "method": "GET",
+      "path": "/api/admin/notifications",
+      "status": 401,
+      "ok": true,
+      "ms": 1061,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/referrals",
+      "method": "GET",
+      "path": "/api/admin/referrals",
+      "status": 401,
+      "ok": true,
+      "ms": 1601,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/help",
+      "method": "GET",
+      "path": "/api/admin/help",
+      "status": 401,
+      "ok": true,
+      "ms": 1075,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/audit-logs",
+      "method": "GET",
+      "path": "/api/admin/audit-logs",
+      "status": 401,
+      "ok": true,
+      "ms": 1056,
+      "error": null,
+      "category": "api"
+    },
+    {
+      "name": "admin /api/admin/tracking/active",
+      "method": "GET",
+      "path": "/api/admin/tracking/active",
+      "status": 401,
+      "ok": true,
+      "ms": 1080,
+      "error": null,
+      "category": "api"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import {
   applyRiderLocationUpdate,
   getOrder as getMemoryOrder,
 } from "@/lib/server/orderStore";
-import { isPlatformEnabled, getServiceUrl } from "@/lib/platform/client";
+import { isPlatformEnabled, getServiceUrl, getInternalKey } from "@/lib/platform/client";
 import {
   bearingDegrees,
   estimateEtaMinutes,
@@ -24,17 +24,25 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
-  const body = bodySchema.parse(await request.json());
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: z.infer<typeof bodySchema>;
+  try {
+    body = bodySchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
 
   const order = (await getOrder(body.orderId)) ?? getMemoryOrder(body.orderId);
   if (!order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  if (
-    user?.role !== "admin" &&
-    user?.id !== order.userId
-  ) {
+  // Only admins (or assigned riders via /api/rider/location) may update rider GPS.
+  // Customers must not spoof delivery location on their own orders.
+  if (user.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -81,10 +89,10 @@ export async function POST(request: Request) {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "x-internal-key": process.env.INTERNAL_SERVICE_KEY ?? "",
+            "x-internal-key": getInternalKey(),
           },
           body: JSON.stringify({
-            riderId: user?.id ?? "00000000-0000-4000-8000-000000000001",
+            riderId: user.id,
             riderName: order.tracking?.riderName ?? "Rider",
             riderPhone: order.tracking?.riderPhone ?? "",
             latitude: body.lat,

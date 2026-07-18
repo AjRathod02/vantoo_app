@@ -66,7 +66,12 @@ export interface AvailableDelivery {
 
 export async function getRiderMe(userId: string): Promise<RiderMeResponse> {
   if (!isPlatformEnabled()) return { rider: null, stats: null, availability: null };
-  return serviceFetch<RiderMeResponse>("rider", "/v1/riders/me", { userId });
+  try {
+    return await serviceFetch<RiderMeResponse>("rider", "/v1/riders/me", { userId });
+  } catch (e) {
+    console.error("Rider service getRiderMe failed:", e);
+    return { rider: null, stats: null, availability: null };
+  }
 }
 
 export async function applyRider(userId: string, data: Record<string, unknown>): Promise<RiderProfile> {

@@ -26,7 +26,14 @@ export function getServiceUrl(service: keyof typeof DEFAULTS): string {
 }
 
 export function getInternalKey(): string {
-  return process.env.INTERNAL_SERVICE_KEY ?? "dev_internal_key_change_in_production";
+  const key = process.env.INTERNAL_SERVICE_KEY;
+  if (!key) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("INTERNAL_SERVICE_KEY must be set in production");
+    }
+    return "dev_internal_key_change_in_production";
+  }
+  return key;
 }
 
 export interface ServiceResponse<T> {

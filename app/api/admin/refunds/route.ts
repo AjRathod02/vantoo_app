@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdminAuth, adminErrorResponse } from "@/lib/admin/auth";
 import { hasPermission } from "@/lib/admin/rbac";
-import { listAllOrders, updateOrder } from "@/lib/server/orders";
+import { getOrder, listAllOrders, updateOrder } from "@/lib/server/orders";
 import { logAdminAction } from "@/lib/admin/audit";
+import { getRazorpay, isRazorpayConfigured } from "@/lib/razorpay";
 import type { Order } from "@/lib/types";
 
 export async function GET() {
@@ -30,25 +31,84 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { orderId, action, amount, reason } = await request.json();
+    const body = await request.json();
+    const { orderId, action, amount, reason } = body as {
+      orderId?: string;
+      action?: string;
+      amount?: number;
+      reason?: string;
+    };
+
+    if (!orderId || !action) {
+      return NextResponse.json(
+        { error: "orderId and action are required" },
+        { status: 400 }
+      );
+    }
+
+    const existing = await getOrder(orderId);
+    if (!existing) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const maxRefund = existing.total;
+    const refundAmount =
+      typeof amount === "number" && Number.isFinite(amount) ? amount : maxRefund;
+
+    if (refundAmount <= 0 || refundAmount > maxRefund) {
+      return NextResponse.json(
+        { error: `Refund amount must be between 0 and ${maxRefund}` },
+        { status: 400 }
+      );
+    }
 
     const patch: Partial<Order> = {};
-    if (action === "approve") {
+    if (action === "approve" || action === "partial") {
       patch.refundStatus = "processing";
-      patch.refundAmount = amount;
+      patch.refundAmount = refundAmount;
     } else if (action === "complete") {
+      if (
+        existing.razorpayPaymentId &&
+        isRazorpayConfigured() &&
+        existing.paymentStatus === "paid"
+      ) {
+        try {
+          const razorpay = getRazorpay();
+          await razorpay.payments.refund(existing.razorpayPaymentId, {
+            amount: Math.round(refundAmount * 100),
+            notes: {
+              orderId,
+              reason: reason || "Admin refund",
+              adminId: ctx.admin.id,
+            },
+          });
+        } catch (e) {
+          console.error("Razorpay refund failed:", e);
+          return NextResponse.json(
+            {
+              error:
+                e instanceof Error
+                  ? e.message
+                  : "Razorpay refund failed — order status not updated",
+            },
+            { status: 502 }
+          );
+        }
+      }
       patch.refundStatus = "completed";
+      patch.refundAmount = refundAmount;
       patch.paymentStatus = "refunded";
     } else if (action === "reject") {
       patch.refundStatus = "none";
-    } else if (action === "partial") {
-      patch.refundStatus = "processing";
-      patch.refundAmount = amount;
+      patch.refundAmount = undefined;
     } else {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
     const order = await updateOrder(orderId, patch);
+    if (!order) {
+      return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
+    }
 
     await logAdminAction({
       adminId: ctx.admin.id,
@@ -56,7 +116,7 @@ export async function PATCH(request: Request) {
       action,
       resource: "refunds",
       resourceId: orderId,
-      details: { amount, reason },
+      details: { amount: refundAmount, reason },
     });
 
     return NextResponse.json({ order });

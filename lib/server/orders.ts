@@ -129,8 +129,26 @@ export async function saveOrder(order: Order) {
 
 export async function createOrder(
   userId: string,
-  input: Parameters<typeof createPlatformOrder>[1]
+  input: Parameters<typeof createPlatformOrder>[1] & {
+    subtotal?: number;
+    deliveryFee?: number;
+    tax?: number;
+    discount?: number;
+    total?: number;
+  }
 ): Promise<Order> {
+  if (input.razorpayPaymentId) {
+    const { findOrderByRazorpayPaymentId } = await import(
+      "@/lib/payments/verify-payment"
+    );
+    const existing = await findOrderByRazorpayPaymentId(input.razorpayPaymentId);
+    if (existing) {
+      const order = await getOrder(existing.id, userId);
+      if (order && (!order.userId || order.userId === userId)) return order;
+      throw new Error("Payment already used for another order");
+    }
+  }
+
   if (isPlatformEnabled()) {
     try {
       const order = await createPlatformOrder(userId, input);
@@ -145,18 +163,31 @@ export async function createOrder(
 
   const id = `VT${Date.now().toString().slice(-8)}`;
   const customer = customerCoordsFromPincode(input.address.pincode);
+  const subtotal =
+    input.subtotal ??
+    input.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const deliveryFee = input.deliveryFee ?? 40;
+  const tax = input.tax ?? 0;
+  const discount = input.discount ?? 0;
+  const total = input.total ?? subtotal + deliveryFee + tax - discount;
+
   const order: Order = {
     id,
     userId,
     items: input.items,
-    subtotal: input.items.reduce((s, i) => s + i.price * i.quantity, 0),
-    deliveryFee: 40,
-    tax: 0,
-    discount: 0,
-    total: input.items.reduce((s, i) => s + i.price * i.quantity, 0) + 40,
+    subtotal,
+    deliveryFee,
+    tax,
+    discount,
+    total,
     status: "confirmed",
     paymentMethod: input.paymentMethod,
-    paymentStatus: input.paymentMethod === "cod" ? "pending" : (input.paymentStatus ?? "paid"),
+    paymentStatus:
+      input.paymentMethod === "cod"
+        ? "pending"
+        : input.paymentStatus === "paid"
+          ? "paid"
+          : "pending",
     refundStatus: "none",
     address: input.address,
     placedAt: new Date().toISOString(),

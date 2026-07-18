@@ -1,3 +1,4 @@
+import { getSessionUser } from "@/lib/server/auth";
 import { getOrder } from "@/lib/server/orders";
 import { getOrder as getMemoryOrder } from "@/lib/server/orderStore";
 import { subscribeRiderLocation } from "@/lib/tracking/broadcaster";
@@ -9,9 +10,21 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const order = (await getOrder(params.id)) ?? getMemoryOrder(params.id);
+  const user = await getSessionUser();
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const order = (await getOrder(params.id, user.id)) ?? getMemoryOrder(params.id);
   if (!order) {
     return new Response("Order not found", { status: 404 });
+  }
+
+  if (order.userId && order.userId !== user.id && user.role !== "admin") {
+    return new Response("Forbidden", { status: 403 });
+  }
+  if (!order.userId && user.role !== "admin") {
+    return new Response("Forbidden", { status: 403 });
   }
 
   const encoder = new TextEncoder();

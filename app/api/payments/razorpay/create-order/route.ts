@@ -2,9 +2,20 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRazorpay, isRazorpayConfigured, getRazorpayKeyId } from "@/lib/razorpay";
 import { getSessionUser } from "@/lib/server/auth";
+import { priceOrderItems } from "@/lib/payments/server-pricing";
 
 const schema = z.object({
-  amount: z.number().min(1),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        quantity: z.number().int().min(1),
+        variantId: z.string().optional(),
+      })
+    )
+    .min(1),
+  /** @deprecated Client amount is ignored; kept for backward compatibility. */
+  amount: z.number().min(1).optional(),
 });
 
 export async function POST(request: Request) {
@@ -23,15 +34,38 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid cart", details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+
+  let priced;
+  try {
+    priced = await priceOrderItems(parsed.data.items);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Unable to price cart" },
+      { status: 400 }
+    );
+  }
+
+  if (priced.total < 1) {
+    return NextResponse.json({ error: "Order total too low" }, { status: 400 });
   }
 
   try {
     const razorpay = getRazorpay();
+    const amountPaise = Math.round(priced.total * 100);
     const order = await razorpay.orders.create({
-      amount: Math.round(parsed.data.amount * 100),
+      amount: amountPaise,
       currency: "INR",
       receipt: `vantoo_${Date.now()}`,
+      notes: {
+        userId: user.id,
+        expectedAmountInr: String(priced.total),
+        itemCount: String(priced.items.length),
+      },
     });
 
     return NextResponse.json({
@@ -39,6 +73,7 @@ export async function POST(request: Request) {
       amount: order.amount,
       currency: order.currency,
       keyId: getRazorpayKeyId(),
+      serverTotal: priced.total,
     });
   } catch (e) {
     console.error("Razorpay create order:", e);
@@ -57,7 +92,7 @@ export async function POST(request: Request) {
           ? "Razorpay authentication failed. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET."
           : description || "Failed to create payment order",
       },
-      { status: isAuthFailure ? 401 : 500 }
+      { status: isAuthFailure ? 502 : 500 }
     );
   }
 }

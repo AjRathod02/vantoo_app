@@ -27,10 +27,20 @@ function resolveRole(
   sessionRole?: string,
   headerRole?: string | null
 ): LocationRole {
-  if (requested === "admin" && sessionRole === "admin") return "admin";
-  if (requested === "rider") return "rider";
-  if (requested === "vendor") return "vendor";
-  if (headerRole === "rider" || headerRole === "vendor") return headerRole;
+  // Never trust client-claimed rider/vendor/admin without a matching session role.
+  if (sessionRole === "admin") {
+    if (requested === "admin" || headerRole === "admin") return "admin";
+  }
+  // Rider/vendor elevation is handled only when session profile role matches.
+  // Customer sessions cannot spoof onto admin location maps.
+  if (requested === "rider" || headerRole === "rider") {
+    if (sessionRole === "admin") return "rider";
+    return "customer";
+  }
+  if (requested === "vendor" || headerRole === "vendor") {
+    if (sessionRole === "admin") return "vendor";
+    return "customer";
+  }
   return "customer";
 }
 
@@ -40,7 +50,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = bodySchema.parse(await request.json());
+  let body: z.infer<typeof bodySchema>;
+  try {
+    body = bodySchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
   const portalRole = request.headers.get("x-vantoo-portal") as LocationRole | null;
   const role = resolveRole(body.role, user.role, portalRole);
 

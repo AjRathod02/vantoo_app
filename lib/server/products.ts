@@ -123,9 +123,12 @@ export async function listProducts(filters?: {
       if (filters?.service) query = query.eq("service", filters.service);
       if (filters?.category) query = query.eq("category", filters.category);
       if (filters?.q) {
-        query = query.or(
-          `name.ilike.%${filters.q}%,brand.ilike.%${filters.q}%,description.ilike.%${filters.q}%`
-        );
+        const safe = filters.q.replace(/[%_,.()]/g, " ").trim();
+        if (safe) {
+          query = query.or(
+            `name.ilike.%${safe}%,brand.ilike.%${safe}%,description.ilike.%${safe}%`
+          );
+        }
       }
       const { data, error } = await query;
       if (!error && data && data.length > 0) {

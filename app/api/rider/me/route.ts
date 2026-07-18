@@ -9,6 +9,17 @@ export async function GET() {
   if (!isPlatformEnabled()) {
     return NextResponse.json({ rider: null, stats: null, availability: null, platformEnabled: false });
   }
-  const data = await getRiderMe(user.id);
-  return NextResponse.json({ ...data, platformEnabled: true });
+  try {
+    const data = await getRiderMe(user.id);
+    return NextResponse.json({ ...data, platformEnabled: true });
+  } catch (e) {
+    console.error("rider/me platform unavailable:", e);
+    return NextResponse.json({
+      rider: null,
+      stats: null,
+      availability: null,
+      platformEnabled: true,
+      warning: "Rider service unavailable",
+    });
+  }
 }

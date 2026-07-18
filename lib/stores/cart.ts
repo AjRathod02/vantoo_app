@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, Product } from "@/lib/types";
+import { DELIVERY_FEE, TAX_RATE } from "@/lib/commerce/constants";
 
 const PROMO_CODES: Record<string, number> = {
   SAVE10: 0.1,
@@ -73,8 +74,7 @@ export function computeCartSummary(
   };
 }
 
-export const DELIVERY_FEE = 40;
-export const TAX_RATE = 0.05;
+export { DELIVERY_FEE, TAX_RATE } from "@/lib/commerce/constants";
 
 export const useCartStore = create<CartState>()(
   persist(

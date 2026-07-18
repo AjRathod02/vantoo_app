@@ -177,7 +177,12 @@ export async function placeOrder(params: PlaceOrderParams) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ amount: totals.total }),
+      body: JSON.stringify({
+        items: items.map((i) => ({
+          productId: i.product.id,
+          quantity: i.quantity,
+        })),
+      }),
     });
 
     if (payRes.status === 401) {
@@ -224,7 +229,10 @@ export async function placeOrder(params: PlaceOrderParams) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
-            body: JSON.stringify(response),
+            body: JSON.stringify({
+              ...response,
+              expectedAmount: totals.total,
+            }),
           });
 
           if (!verifyRes.ok) {

@@ -45,12 +45,23 @@ export async function POST(
     return NextResponse.json({ error: "Invalid review" }, { status: 400 });
   }
 
+  let verifiedPurchase = false;
+  if (parsed.data.orderId) {
+    const { getOrder } = await import("@/lib/server/orders");
+    const order = await getOrder(parsed.data.orderId, user.id);
+    verifiedPurchase = Boolean(
+      order &&
+        order.userId === user.id &&
+        order.items.some((i) => i.productId === params.id)
+    );
+  }
+
   const review = await upsertReview({
     productId: params.id,
     userId: user.id,
     userName: user.name,
     ...parsed.data,
-    verifiedPurchase: Boolean(parsed.data.orderId),
+    verifiedPurchase,
   });
 
   return NextResponse.json({ review }, { status: 201 });

@@ -14,6 +14,7 @@ export function isAllowedMutatingOrigin(request: NextRequest): boolean {
 
   // Public webhooks / streams that may not send Origin
   if (pathname.startsWith("/api/setup/")) return true;
+  if (pathname.startsWith("/api/payments/razorpay/webhook")) return true;
   if (pathname.includes("/stream")) return true;
 
   const origin = request.headers.get("origin");

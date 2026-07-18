@@ -22,7 +22,7 @@ export function verifyRazorpaySignature(
   signature: string
 ) {
   const secret = process.env.RAZORPAY_KEY_SECRET;
-  if (!secret) return false;
+  if (!secret || !signature) return false;
 
   const body = `${orderId}|${paymentId}`;
   const expected = crypto
@@ -30,7 +30,14 @@ export function verifyRazorpaySignature(
     .update(body)
     .digest("hex");
 
-  return expected === signature;
+  try {
+    const a = Buffer.from(expected, "utf8");
+    const b = Buffer.from(signature, "utf8");
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 export function isRazorpayConfigured() {

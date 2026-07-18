@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         const { data: coupon, error } = await createAdminClient()
           .from("coupons")
           .select("*")
-          .ilike("code", code)
+          .eq("code", code)
           .maybeSingle();
 
         if (!error && coupon) {

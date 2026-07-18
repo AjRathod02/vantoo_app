@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/server/auth";
 import { isPlatformEnabled } from "@/lib/platform/client";
-import { updateRiderLocation } from "@/lib/platform/riders";
+import { updateRiderLocation, getRiderMe } from "@/lib/platform/riders";
 import { getOrder, updateOrderTracking } from "@/lib/server/orders";
 import { applyRiderLocationUpdate } from "@/lib/server/orderStore";
 import {
@@ -13,8 +13,8 @@ import {
 
 const bodySchema = z.object({
   orderId: z.string().optional(),
-  lat: z.number(),
-  lng: z.number(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   speed: z.number().optional(),
@@ -28,7 +28,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = bodySchema.parse(await request.json());
+  let body: z.infer<typeof bodySchema>;
+  try {
+    body = bodySchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
   const lat = body.lat ?? body.latitude;
   const lng = body.lng ?? body.longitude;
 
@@ -36,7 +42,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid coordinates" }, { status: 400 });
   }
 
+  // When attaching location to an order, require an approved rider (platform) or admin.
   if (body.orderId) {
+    if (user.role !== "admin") {
+      if (!isPlatformEnabled()) {
+        return NextResponse.json(
+          { error: "Rider location updates require platform mode" },
+          { status: 503 }
+        );
+      }
+      try {
+        const me = await getRiderMe(user.id);
+        if (!me.rider || me.rider.status !== "approved") {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const order = await getOrder(body.orderId);
     if (order) {
       const customer = {

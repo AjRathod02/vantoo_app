@@ -9,26 +9,80 @@ import {
   Wallet,
   CreditCard,
   Gift,
-  HelpCircle,
   Star,
   Package,
   LogOut,
   ChevronRight,
+  Info,
+  Briefcase,
+  BookOpen,
+  Phone,
+  HelpCircle,
+  Shield,
+  FileText,
+  RotateCcw,
+  Ban,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useHydrated } from "@/lib/useHydrated";
 import { toast } from "@/lib/stores/toast";
 
-const menu = [
+const accountMenu = [
+  { label: "My Profile", icon: UserIcon, href: "/profile/edit" },
   { label: "My Orders", icon: Package, href: "/orders" },
-  { label: "Edit Profile", icon: UserIcon, href: "/profile/edit" },
   { label: "Wishlist", icon: Heart, href: "/wishlist" },
   { label: "Wallet", icon: Wallet, href: "/wallet" },
-  { label: "Payment Methods", icon: CreditCard, href: "/profile/payments" },
-  { label: "Refer Friends", icon: Gift, href: "/refer" },
-  { label: "Help Center", icon: HelpCircle, href: "/help" },
+  { label: "Saved Payment Methods", icon: CreditCard, href: "/profile/payments" },
+  { label: "Refer & Earn", icon: Gift, href: "/refer" },
   { label: "Rate App", icon: Star, href: "/rate-app" },
 ];
+
+const informationMenu = [
+  { label: "About Us", icon: Info, href: "/about" },
+  { label: "Careers", icon: Briefcase, href: "/careers" },
+  { label: "Blog", icon: BookOpen, href: "/blog" },
+  { label: "Contact Us", icon: Phone, href: "/contact" },
+  { label: "Help Center", icon: HelpCircle, href: "/help" },
+  { label: "Privacy Policy", icon: Shield, href: "/policies/privacy" },
+  { label: "Terms & Conditions", icon: FileText, href: "/policies/terms" },
+  { label: "Refund Policy", icon: RotateCcw, href: "/policies/refund" },
+  { label: "Cancellation Policy", icon: Ban, href: "/policies/cancellation" },
+];
+
+function MenuSection({
+  title,
+  items,
+}: {
+  title?: string;
+  items: typeof accountMenu;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-card">
+      {title ? (
+        <div className="border-b border-gray-100 bg-gray-50 px-5 py-3">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-ink-soft">
+            {title}
+          </h2>
+        </div>
+      ) : null}
+      {items.map(({ label, icon: Icon, href }, i) => (
+        <Link
+          key={label}
+          href={href}
+          className={`flex items-center gap-3 px-5 py-4 transition-colors hover:bg-gray-50 ${
+            i !== 0 ? "border-t border-gray-100" : ""
+          }`}
+        >
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-surface text-brand-primary">
+            <Icon className="h-4 w-4" />
+          </span>
+          <span className="flex-1 text-sm font-medium text-ink">{label}</span>
+          <ChevronRight className="h-4 w-4 text-ink-soft" />
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -62,29 +116,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-card">
-        {menu.map(({ label, icon: Icon, href }, i) => (
-          <Link
-            key={label}
-            href={href}
-            onClick={(e) => {
-              if (href === "#") {
-                e.preventDefault();
-                toast.info(`${label} is coming soon`);
-              }
-            }}
-            className={`flex items-center gap-3 px-5 py-4 transition-colors hover:bg-gray-50 ${
-              i !== 0 ? "border-t border-gray-100" : ""
-            }`}
-          >
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-surface text-brand-primary">
-              <Icon className="h-4 w-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-ink">{label}</span>
-            <ChevronRight className="h-4 w-4 text-ink-soft" />
-          </Link>
-        ))}
-      </div>
+      <MenuSection items={accountMenu} />
+
+      <MenuSection title="Information" items={informationMenu} />
 
       {user?.role === "admin" && (
         <Link
